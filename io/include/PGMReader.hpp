@@ -59,7 +59,7 @@ private:
             throw IOException { "Could not open file to determine file type" }
         }
 
-        const std::string type;
+        std::string type;
         stream >> type;
         if ("P5" == type) {
             return FileType::BINARY;
