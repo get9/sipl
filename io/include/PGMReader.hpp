@@ -3,8 +3,9 @@
 #ifndef _SIPL_IO_PGMREADER_H_
 #define _SIPL_IO_PGMREADER_H_
 
-#include <string>
 #include <fstream>
+#include <limits>
+#include <string>
 #include <stdexcept>
 #include "Matrix.hpp"
 
@@ -26,20 +27,15 @@ public:
 
     PGMReader() = default;
 
-    PGMReader(const std::string& filename)
-        : filename_(filename), image_width_(0), image_height_(0), maxval_(0)
-    {
-        type_ = determine_file_type();
-        process_header();
-    }
+    PGMReader(const std::string& filename);
 
     template <typename TPixel>
     Matrix<TPixel> read(void) const
     {
         if (maxval_ > std::numeric_limits<uint8_t>::max()) {
-            return read16();
+            return read_impl<uint8_t>();
         } else {
-            return read8();
+            return read_impl<uint16_t>();
         }
     }
 
@@ -52,79 +48,36 @@ private:
 
     // Figure out whether this is binary or ascii. Need to open file once to
     // look at magic number to determine file type
-    FileType determine_file_type()
-    {
-        std::ifstream stream{filename_};
-        if (!stream.is_open()) {
-            throw IOException { "Could not open file to determine file type" }
-        }
-
-        std::string type;
-        stream >> type;
-        if ("P5" == type) {
-            return FileType::BINARY;
-        } else if ("P2" == type) {
-            return FileType::ASCII;
-        } else {
-            return FileType::UNKNOWN;
-        }
-    }
+    FileType determine_file_type() const;
 
     // Process the header of both ASCII and Binary files
-    void process_header(void)
-    {
-        std::ifstream stream{filename_};
-        if (!stream.is_open()) {
-            throw IOException{"Could not open file for reading header"};
-        }
-
-        // Check for comments, etc
-        std::string word, comment_line;
-        stream >> word;
-        while ("#" == word.begin()) {
-            std::getline(stream, comment_line);
-            stream >> word;
-        }
-
-        width_ = size_t(std::stoi(word));
-
-        stream >> word;
-        while ("#" == word.begin()) {
-            std::getline(stream, comment_line);
-            stream >> word;
-        }
-
-        height_ = size_t(std::stoi(word));
-
-        stream >> word;
-        while ("#" == word.begin()) {
-            std::getline(stream, comment_line);
-            stream >> word;
-        }
-
-        maxval_ = std::stoi(word);
-    }
+    void process_header(void);
 
     // Read 1-byte values
-    Matrix<uint8_t> read8(void) const
+    Matrix<uint8_t> read8(void) const;
+
+    // Read 2-byte values
+    Matrix<uint16_t> read16(void) const;
+
+    template <typename TPixel>
+    Matrix<TPixel> read_impl(void) const
     {
         switch (type_) {
-            case FileType::BINARY: return read_binary<uint8_t>(); break;
-            case FileType::ASCII: return read_ascii<uint8_t>(); break;
+            case FileType::BINARY: return read_binary<TPixel>();
+            case FileType::ASCII: return read_ascii<TPixel>();
             case FileType::UNKNOWN:  // Fall through
-            default: throw IOException{"Unknown PGM type"}; break;
+            default: throw IOException{"Unknown PGM type"};
         }
     }
 
-    // Read 2-byte values
-    Matrix<uint16_t> read16(void) const
+    // Template specializations for the two types we know will be instantiated
+    template <>
+    read_impl<uint8_t>()
     {
-        switch (type_) {
-            case FileType::BINARY: return read_binary<uint16_t>(); break;
-            case FileType::ASCII: return read_ascii<uint16_t>(); break;
-            case FileType::UNKNOWN:  // Fall through
-            default: throw IOException{"Unknown PGM type"}; break;
-        }
+    }
+    template <>
+    read_impl<uint16_t>()
+    {
     }
 
     // Read a binary file
