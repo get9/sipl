@@ -5,6 +5,7 @@
 
 #include <initializer_list>
 #include <functional>
+#include <numeric>
 #include <vector>
 #include <memory>
 
@@ -15,31 +16,38 @@ class Matrix
 {
 public:
     // Default constructor, no data
-    Matrix() : data_(nullptr), dims_(nullptr), nelements_(0) {}
+    Matrix() : data_(nullptr), dims_(), nelements_(0) {}
     // Sized constructor. Dims stored in initializer list and initializes memory
     Matrix(std::initializer_list<size_t> dims)
         : dims_(dims),
           nelements_(std::accumulate(std::begin(dims), std::end(dims), 1,
                                      std::multiplies<size_t>())),
-          data_(std::make_shared(sizeof(Dtype) * nelements_))
+          data_(std::unique_ptr<Dtype[]>(new Dtype[sizeof(Dtype) * nelements_]))
     {
     }
 
     // Const accessor
-    const Dtype& operator()(std::initializer_list<size_t> idxs) const
+    const Dtype& operator()(std::vector<size_t> idxs) const
     {
         return data_[calculate_index(idxs)];
     }
 
     // Non-const accessor
-    Dtype& operator()(const std::initializer_list<size_t>& idxs)
+    Dtype& operator()(const std::vector<size_t>& idxs)
     {
         return data_[calculate_index(idxs)];
     }
 
-    // Accessors
-    const Dtype* data(void) const { return data_.get(); }
-    Dtype* data(void) { return data_.get(); }
+    // Access elements by single index
+    const Dtype& operator[](size_t index) const { return data_[index]; }
+    Dtype& operator[](size_t index) { return data_[index]; }
+    // Raw accessor for data buffer
+    Dtype* data(void)
+    {
+        Dtype* raw_ptr = data_.get();
+        return raw_ptr;
+    }
+
     size_t size(void) const { return nelements_; }
     std::vector<size_t> dims(void) const
     {
@@ -52,11 +60,11 @@ public:
     }
 
 private:
-    std::shared_ptr<Dtype[]> data_;
-    std::initializer_list<size_t> dims_;
+    std::vector<size_t> dims_;
     size_t nelements_;
+    std::unique_ptr<Dtype[]> data_;
 
-    size_t calculate_index(const std::initializer_list<size_t>& idxs) const
+    size_t calculate_index(const std::vector<size_t>& idxs) const
     {
         assert(idxs.size() == dims_.size() &&
                "idxs and dims_ must be same size");

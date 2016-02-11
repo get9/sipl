@@ -7,17 +7,22 @@
 #include <limits>
 #include <string>
 #include <stdexcept>
-#include "Matrix.hpp"
+#include <cassert>
+#include "matrix/Matrix.hpp"
 
 namespace sipl
 {
+// From: http://stackoverflow.com/a/8152888
 class IOException : public std::exception
 {
+public:
     explicit IOException(const char* msg) : msg_(msg) {}
     explicit IOException(const std::string& msg) : msg_(msg) {}
     virtual ~IOException() throw() {}
     virtual const char* what() const throw() { return msg_.c_str(); }
-}
+protected:
+    std::string msg_;
+};
 
 class PGMReader
 {
@@ -29,13 +34,23 @@ public:
 
     PGMReader(const std::string& filename);
 
-    template <typename TPixel>
-    Matrix<TPixel> read(void) const
+    Matrix<uint8_t> read8(void)
     {
-        if (maxval_ > std::numeric_limits<uint8_t>::max()) {
-            return read_impl<uint8_t>();
-        } else {
-            return read_impl<uint16_t>();
+        switch (type_) {
+            case PType::BINARY: return read_binary<uint8_t>();
+            case PType::ASCII: return read_ascii<uint8_t>();
+            case PType::UNKNOWN:  // Fall through
+            default: throw IOException{"Unknown PGM type"};
+        }
+    }
+
+    Matrix<uint16_t> read16(void)
+    {
+        switch (type_) {
+            case PType::BINARY: return read_binary<uint16_t>();
+            case PType::ASCII: return read_ascii<uint16_t>();
+            case PType::UNKNOWN:  // Fall through
+            default: throw IOException{"Unknown PGM type"};
         }
     }
 
@@ -51,37 +66,15 @@ private:
     PType determine_file_type() const;
 
     // Process the header of both ASCII and Binary files
-    void process_header(void);
-
-    // Read function generic implementation
-    template <typename TPixel>
-    Matrix<TPixel> read_impl(void) const
-    {
-        switch (type_) {
-            case PType::BINARY: return read_binary<TPixel>();
-            case PType::ASCII: return read_ascii<TPixel>();
-            case PType::UNKNOWN:  // Fall through
-            default: throw IOException{"Unknown PGM type"};
-        }
-    }
-
-    // Template specializations for the two types we know will be instantiated
-    template <>
-    read_impl<uint8_t>()
-    {
-    }
-    template <>
-    read_impl<uint16_t>()
-    {
-    }
+    void process_header(std::ifstream& stream);
 
     // Read a binary file
     template <typename TPixel>
-    Matrix<PixelT> read_binary(void)
+    Matrix<TPixel> read_binary(void)
     {
-        std::ifstream stream{filename_, std::ios::binary | std::ios::in};
+        std::ifstream stream{filename_};
         if (!stream.is_open()) {
-            throw IOException{"Could not open ASCII file for reading"};
+            throw IOException("Could not open binary file for reading");
         }
 
         // Fill header information
@@ -89,24 +82,24 @@ private:
 
         // Read binary data directly into the Matrix's data buffer
         Matrix<TPixel> mat{image_height_, image_width_};
-        stream.read(mat.data(), mat.size());
+        stream.read((char*)(mat.data()), mat.size());
+        return mat;
     }
 
     // Read an ascii file
     template <typename TPixel>
-    Matrix<PixelT> read_ascii(void)
+    Matrix<TPixel> read_ascii(void)
     {
-        // Check if we can open a file
         std::ifstream stream{filename_};
         if (!stream.is_open()) {
-            throw IOException{"Could not open ASCII file for reading"};
+            throw IOException("Could not open ascii file for reading");
         }
 
         // Fill header information
         process_header(stream);
 
         Matrix<TPixel> mat{image_height_, image_width_};
-        for (size_t i = 0; i < image_height_ * image_width_; ++i) {
+        for (size_t i = 0; i < mat.size(); ++i) {
             stream >> mat[i];
         }
 
