@@ -1,5 +1,6 @@
 #include <iostream>
-#include "io/PGMReader.hpp"
+#include <algorithm>
+#include "io/PGMIO.hpp"
 #include "matrix/Matrix.hpp"
 
 using namespace sipl;
@@ -12,8 +13,9 @@ int main(int argc, char** argv)
         std::exit(1);
     }
 
-    const std::string filename{argv[1]};
-    PGMReader reader{filename};
-    auto mat = reader.read8();
-    std::cout << mat({0, 0}) << std::endl;
+    // const std::string filename{argv[1]};
+    PGMIO pgm;
+    auto mat = pgm.read<uint8_t>("tmp_ascii.pgm");
+    // pgm.write(mat, "tmp_binary.pgm", PGMIO::PType::BINARY);
+    pgm.write(mat, "tmp_ascii2.pgm", PGMIO::PType::ASCII);
 }

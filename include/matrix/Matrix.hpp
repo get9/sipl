@@ -1,39 +1,42 @@
 #pragma once
 
-#ifndef _SIPL_MATRIX_H_
-#define _SIPL_MATRIX_H_
+#ifndef SIPL_MATRIX_H
+#define SIPL_MATRIX_H
 
-#include <initializer_list>
 #include <functional>
 #include <numeric>
-#include <vector>
+#include <array>
 #include <memory>
+#include <iostream>
 
 namespace sipl
 {
-template <typename Dtype>
+template <typename Dtype, uint32_t Dims>
 class Matrix
 {
 public:
+    const std::array<size_t, Dims> dims;
+
     // Default constructor, no data
-    Matrix() : data_(nullptr), dims_(), nelements_(0) {}
-    // Sized constructor. Dims stored in initializer list and initializes memory
-    Matrix(std::initializer_list<size_t> dims)
-        : dims_(dims),
-          nelements_(std::accumulate(std::begin(dims), std::end(dims), 1,
-                                     std::multiplies<size_t>())),
+    Matrix() : dims(), nelements_(0), data_(nullptr) {}
+    // Sized constructor. Dims stored in initializer list and initializes
+    // nmemory
+    Matrix(std::array<size_t, Dims> ds)
+        : dims(ds),
+          nelements_(std::accumulate(std::begin(dims), std::end(dims),
+                                     size_t(1), std::multiplies<size_t>())),
           data_(std::unique_ptr<Dtype[]>(new Dtype[sizeof(Dtype) * nelements_]))
     {
     }
 
     // Const accessor
-    const Dtype& operator()(std::vector<size_t> idxs) const
+    const Dtype& operator()(const std::array<size_t, Dims>& idxs) const
     {
         return data_[calculate_index(idxs)];
     }
 
     // Non-const accessor
-    Dtype& operator()(const std::vector<size_t>& idxs)
+    Dtype& operator()(const std::array<size_t, Dims>& idxs)
     {
         return data_[calculate_index(idxs)];
     }
@@ -42,37 +45,30 @@ public:
     const Dtype& operator[](size_t index) const { return data_[index]; }
     Dtype& operator[](size_t index) { return data_[index]; }
     // Raw accessor for data buffer
-    Dtype* data(void)
+    const Dtype* buffer(void) const
     {
-        Dtype* raw_ptr = data_.get();
-        return raw_ptr;
+        return reinterpret_cast<const Dtype*>(data_.get());
     }
-
+    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.get()); }
+    // Accessors for the buffer as bytes (for serialization, etc)
+    const char* as_bytes(void) const
+    {
+        return reinterpret_cast<const char*>(data_.get());
+    }
+    char* bytes(void) { return reinterpret_cast<char*>(data_.get()); }
     size_t size(void) const { return nelements_; }
-    std::vector<size_t> dims(void) const
-    {
-        std::vector<size_t> ds;
-        ds.reserve(dims_.size());
-        for (const auto d : dims_) {
-            ds.push_back(d);
-        }
-        return std::move(ds);
-    }
-
+    size_t size_in_bytes(void) const { return nelements_ * sizeof(Dtype); }
 private:
-    std::vector<size_t> dims_;
     size_t nelements_;
     std::unique_ptr<Dtype[]> data_;
 
-    size_t calculate_index(const std::vector<size_t>& idxs) const
+    size_t calculate_index(const std::array<size_t, Dims>& idxs) const
     {
-        assert(idxs.size() == dims_.size() &&
-               "idxs and dims_ must be same size");
         size_t target_index = 0;
-        for (int32_t i = 0; i < dims_.size(); ++i) {
-            target_index += idxs[i] * dims_[i];
+        for (size_t i = 0; i < dims.size() - 1; ++i) {
+            target_index += idxs[i] * dims[i + 1];
         }
-        return target_index;
+        return target_index + idxs.back();
     }
 };
 }

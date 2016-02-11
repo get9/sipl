@@ -1,18 +1,14 @@
-#include "io/PGMReader.hpp"
+#include <iostream>
+#include <tuple>
+#include "io/PGMIO.hpp"
 
 using namespace sipl;
 
-PGMReader::PGMReader(const std::string& filename)
-    : filename_(filename), image_width_(0), image_height_(0), maxval_(0)
-{
-    type_ = determine_file_type();
-}
-
 // Figure out whether this is binary or ascii. Need to open file once to
 // look at magic number to determine file type
-PGMReader::PType PGMReader::determine_file_type() const
+PGMIO::PType PGMIO::determine_file_type(const std::string& filename) const
 {
-    std::ifstream stream{filename_};
+    std::ifstream stream{filename};
     if (!stream.is_open()) {
         throw IOException{"Could not open file to determine file type"};
     }
@@ -29,8 +25,13 @@ PGMReader::PType PGMReader::determine_file_type() const
 }
 
 // Process the header of both ASCII and Binary files
-void PGMReader::process_header(std::ifstream& stream)
+std::tuple<size_t, size_t, size_t> PGMIO::process_header(
+    std::ifstream& stream) const
 {
+    // Get magic number (must be first string in header)
+    std::string _;
+    stream >> _;
+
     // Check for comments, etc
     std::string word, comment_line;
     stream >> word;
@@ -39,7 +40,7 @@ void PGMReader::process_header(std::ifstream& stream)
         stream >> word;
     }
 
-    image_width_ = size_t(std::stoi(word));
+    size_t image_width = size_t(std::stoul(word));
 
     stream >> word;
     while ('#' == word[0]) {
@@ -47,7 +48,7 @@ void PGMReader::process_header(std::ifstream& stream)
         stream >> word;
     }
 
-    image_height_ = size_t(std::stoi(word));
+    size_t image_height = size_t(std::stoul(word));
 
     stream >> word;
     while ('#' == word[0]) {
@@ -55,5 +56,7 @@ void PGMReader::process_header(std::ifstream& stream)
         stream >> word;
     }
 
-    maxval_ = std::stoi(word);
+    size_t maxval = std::stoul(word);
+
+    return std::make_tuple(image_height, image_width, maxval);
 }
