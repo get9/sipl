@@ -11,7 +11,7 @@ PGMReader::PGMReader(const std::string& filename)
 
 // Figure out whether this is binary or ascii. Need to open file once to
 // look at magic number to determine file type
-PGMReader::FileType PGMReader::determine_file_type()
+PGMReader::PType PGMReader::determine_file_type()
 {
     std::ifstream stream{filename_};
     if (!stream.is_open()) {
@@ -21,16 +21,16 @@ PGMReader::FileType PGMReader::determine_file_type()
     std::string type;
     stream >> type;
     if ("P5" == type) {
-        return FileType::BINARY;
+        return PType::BINARY;
     } else if ("P2" == type) {
-        return FileType::ASCII;
+        return PType::ASCII;
     } else {
-        return FileType::UNKNOWN;
+        return PType::UNKNOWN;
     }
 }
 
 // Process the header of both ASCII and Binary files
-void process_header(void)
+void PGMReader::process_header(void)
 {
     std::ifstream stream{filename_};
     if (!stream.is_open()) {

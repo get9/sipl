@@ -23,7 +23,7 @@ class PGMReader
 {
 public:
     // Different types of PGM files
-    enum class FileType { BINARY, ASCII, UNKNOWN };
+    enum class PType { BINARY, ASCII, UNKNOWN };
 
     PGMReader() = default;
 
@@ -41,31 +41,26 @@ public:
 
 private:
     std::string filename_;
-    FileType type_;
+    PType type_;
     size_t image_width_;
     size_t image_height_;
     int32_t maxval_;
 
     // Figure out whether this is binary or ascii. Need to open file once to
     // look at magic number to determine file type
-    FileType determine_file_type() const;
+    PType determine_file_type() const;
 
     // Process the header of both ASCII and Binary files
     void process_header(void);
 
-    // Read 1-byte values
-    Matrix<uint8_t> read8(void) const;
-
-    // Read 2-byte values
-    Matrix<uint16_t> read16(void) const;
-
+    // Read function generic implementation
     template <typename TPixel>
     Matrix<TPixel> read_impl(void) const
     {
         switch (type_) {
-            case FileType::BINARY: return read_binary<TPixel>();
-            case FileType::ASCII: return read_ascii<TPixel>();
-            case FileType::UNKNOWN:  // Fall through
+            case PType::BINARY: return read_binary<TPixel>();
+            case PType::ASCII: return read_ascii<TPixel>();
+            case PType::UNKNOWN:  // Fall through
             default: throw IOException{"Unknown PGM type"};
         }
     }
@@ -84,6 +79,17 @@ private:
     template <typename TPixel>
     Matrix<PixelT> read_binary(void)
     {
+        std::ifstream stream{filename_, std::ios::binary | std::ios::in};
+        if (!stream.is_open()) {
+            throw IOException{"Could not open ASCII file for reading"};
+        }
+
+        // Fill header information
+        process_header(stream);
+
+        // Read binary data directly into the Matrix's data buffer
+        Matrix<TPixel> mat{image_height_, image_width_};
+        stream.read(mat.data(), mat.size());
     }
 
     // Read an ascii file
