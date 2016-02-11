@@ -13,7 +13,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 # Set directories of output files
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
-add_subdirectory(src)
 include_directories(include)
 
-add_executable(sipldemo test.cpp ${IO_SOURCES} ${MATRIX_SOURCES})
+add_executable(sipldemo test.cpp src/io/PGMReader.cpp)
