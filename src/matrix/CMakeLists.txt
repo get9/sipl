@@ -1,2 +1,3 @@
 set(MATRIX_SOURCES
+    PARENT_SCOPE
 )

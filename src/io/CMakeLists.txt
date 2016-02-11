@@ -1,3 +1,4 @@
 set(IO_SOURCES
-    "PGMReader.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PGMReader.cpp"
+    PARENT_SCOPE
 )
