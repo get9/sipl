@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <tuple>
+#include <sstream>
 #include "matrix/Matrix.hpp"
 
 namespace sipl
@@ -31,21 +32,21 @@ public:
     enum class PType { BINARY, ASCII, UNKNOWN };
 
     template <typename T>
-    Matrix<T, 2> read(const std::string& filename) const;
+    Matrix<T> read(const std::string& filename) const;
 
     template <typename T>
-    Matrix<T, 2> read(const char* filename) const;
+    Matrix<T> read(const char* filename) const;
 
     template <typename T>
-    void write(const Matrix<T, 2>& mat, const std::string& filanem) const;
+    void write(const Matrix<T>& mat, const std::string& filanem) const;
 
     template <typename T>
-    void write(const Matrix<T, 2>& mat, const char* filanem) const;
+    void write(const Matrix<T>& mat, const char* filanem) const;
 
 protected:
     // Read a binary file
     template <typename T>
-    Matrix<T, 2> read_binary(const std::string& filename) const
+    Matrix<T> read_binary(const std::string& filename) const
     {
         std::ifstream stream{filename, std::ios::binary};
         if (!stream) {
@@ -61,14 +62,14 @@ protected:
                "wrong type for matrix");
 
         // Read binary data directly into the Matrix's data buffer
-        Matrix<T, 2> mat({height, width});
+        Matrix<T> mat{height, width};
         stream.read(mat.bytes(), ssize_t(mat.size_in_bytes()));
         return mat;
     }
 
     // Read an ascii file
     template <typename T>
-    Matrix<T, 2> read_ascii(const std::string& filename) const
+    Matrix<T> read_ascii(const std::string& filename) const
     {
         std::ifstream stream{filename, std::ios::binary};
         if (!stream) {
@@ -79,7 +80,7 @@ protected:
         size_t height, width, maxval;
         std::tie(height, width, maxval) = process_header(stream);
 
-        Matrix<T, 2> mat({height, width});
+        Matrix<T> mat{height, width};
         std::string pixval;
         for (size_t i = 0; i < mat.size(); ++i) {
             stream >> pixval;
@@ -91,8 +92,7 @@ protected:
 
     // Write binary file
     template <typename T>
-    void write_binary(const Matrix<T, 2>& mat,
-                      const std::string& filename) const
+    void write_binary(const Matrix<T>& mat, const std::string& filename) const
     {
         std::ofstream stream{filename, std::ios::binary | std::ios::trunc};
         if (!stream) {
@@ -112,7 +112,7 @@ protected:
 
     // Write binary file
     template <typename T>
-    void write_ascii(const Matrix<T, 2>& mat, const std::string& filename) const
+    void write_ascii(const Matrix<T>& mat, const std::string& filename) const
     {
         std::ofstream stream{filename, std::ios::trunc | std::ios::binary};
         if (!stream) {
@@ -121,13 +121,13 @@ protected:
 
         // Write magic number and matrix header info
         stream << "P2" << std::endl
-               << mat.dims[1] << " " << mat.dims[0] << std::endl
+               << mat.cols << " " << mat.rows << std::endl
                << std::to_string(std::numeric_limits<T>::max()) << std::endl;
 
         // Write mat data
-        for (size_t i = 0; i < mat.dims[0]; ++i) {
-            for (size_t j = 0; j < mat.dims[1]; ++j) {
-                stream << std::to_string(mat({i, j})) << " ";
+        for (size_t i = 0; i < mat.rows; ++i) {
+            for (size_t j = 0; j < mat.cols; ++j) {
+                stream << std::to_string(mat(i, j)) << " ";
             }
             stream << std::endl;
         }
@@ -136,9 +136,6 @@ protected:
     // Process the header of both ASCII and Binary files
     std::tuple<size_t, size_t, size_t> process_header(
         std::ifstream& stream) const;
-
-    // Determine filetype
-    virtual PType determine_file_type(const std::string& filename) const = 0;
 };
 }
 

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <algorithm>
-#include "io/PgmIO.hpp"
 #include "matrix/Matrix.hpp"
+#include "io/PpmIO.hpp"
 
 using namespace sipl;
 
@@ -15,8 +15,8 @@ int main(int argc, char** argv)
     }
 
     // const std::string filename{argv[1]};
-    PgmIO pgm;
-    auto mat = pgm.read(argv[1]);
-    pgm.write(mat, argv[2], PGMIO::PType::BINARY);
-    // pgm.write(mat, argv[2], PGMIO::PType::ASCII);
+    PpmIO ppm;
+    auto mat = ppm.read(argv[1]);
+    ppm.write(mat, argv[2], PpmIO::PType::BINARY);
+    // ppm.write(mat, argv[2], PpmIO::PType::ASCII);
 }

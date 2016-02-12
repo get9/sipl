@@ -22,4 +22,9 @@ include_directories(include)
 add_subdirectory(src)
 
 #add_executable(sipldemo test.cpp ${IO_SOURCES} ${MATRIX_SOURCES})
-add_executable(sipldemo test.cpp src/io/NetpbmIOBase.cpp src/io/PGMIO.cpp)
+add_executable(sipldemo
+    test.cpp
+    src/io/NetpbmIOBase.cpp
+    src/io/PgmIO.cpp
+    src/io/PpmIO.cpp
+)

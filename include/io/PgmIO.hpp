@@ -20,13 +20,13 @@ public:
     PgmIO() = default;
 
     // char* version
-    Matrix<uint8_t, 2> read(const char* filename) const
+    Matrix<uint8_t> read(const char* filename) const
     {
         return read(std::string(filename));
     }
 
     // std::string version
-    Matrix<uint8_t, 2> read(const std::string& filename) const
+    Matrix<uint8_t> read(const std::string& filename) const
     {
         PType type = determine_file_type(filename);
         switch (type) {
@@ -40,7 +40,7 @@ public:
     }
 
     // char* version
-    void write(const Matrix<uint8_t, 2>& mat,
+    void write(const Matrix<uint8_t>& mat,
                const char* filename,
                const PType type = PType::BINARY) const
     {
@@ -48,7 +48,7 @@ public:
     }
 
     // std::string version
-    void write(const Matrix<uint8_t, 2>& mat,
+    void write(const Matrix<uint8_t>& mat,
                const std::string& filename,
                const PType type = PType::BINARY) const
     {
@@ -66,7 +66,7 @@ public:
 
 private:
     // look at magic number to determine file type
-    PType determine_file_type(const std::string& filename) const override;
+    PType determine_file_type(const std::string& filename) const;
 };
 }
 
