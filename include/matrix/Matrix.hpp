@@ -3,17 +3,16 @@
 #ifndef SIPL_MATRIX_H
 #define SIPL_MATRIX_H
 
-#include <functional>
-#include <numeric>
-#include <array>
 #include <memory>
-#include <iostream>
+#include "matrix/MatrixBase.hpp"
 #include "matrix/Vector.hpp"
 
 namespace sipl
 {
+
+// Dynaically-sized matrices
 template <typename Dtype>
-class Matrix
+class Matrix<Dtype, Dynamic, Dynamic>
 {
 public:
     const std::array<size_t, 2> dims;
@@ -21,15 +20,11 @@ public:
     const size_t cols;
 
     // Default constructor, no data
-    Matrix() : dims({0, 0}), rows(0), cols(0), nelements_(0), data_(nullptr) {}
-
-    // Sized constructor. 2 stored in initializer list and initializes
-    // nmemory
     Matrix(const size_t rs, const size_t cs)
         : dims({rs, cs})
         , rows(rs)
         , cols(cs)
-        , nelements_(rows * cols)
+        , nelements_(rs * cs)
         , nbytes_(nelements_ * sizeof(Dtype))
         , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]))
     {
@@ -78,9 +73,43 @@ private:
     std::unique_ptr<Dtype[]> data_;
 };
 
+// Dynamically-allocated matrix
+template <typename Dtype>
+using MatrixX = Matrix<Dtype, Dynamic, Dynamic>;
+
+// Matrix mul for dynamically-defined matrices
+template <typename Dtype, int32_t R1, int32_t C2>
+Matrix<Dtype, R1, C2> operator*(const Matrix<Dtype, R1, Dynamic>& m1,
+                                const Matrix<Dtype, Dynamic, C2>& m2)
+{
+    assert(m1.cols == m2.rows && "m1 cols must equal m2 rows");
+
+    // For clamping
+    constexpr auto max = std::numeric_limits<Dtype>::max();
+    constexpr auto min = std::numeric_limits<Dtype>::min();
+
+    Matrix<Dtype, Dynamic, Dynamic> mat(m1.rows, m2.cols);
+    for (size_t row = 0; row < m1.rows; ++row) {
+        for (size_t col = 0; col < m2.cols; ++col) {
+            double sum = 0;
+            for (size_t inner = 0; inner < m1.cols; ++inner) {
+                if (std::round(sum) >= max) {
+                    sum = max;
+                } else if (std::round(sum) <= min) {
+                    sum = min;
+                } else {
+                    sum += m1(row, inner) * m2(inner, col);
+                }
+            }
+            mat(row, col) = Dtype(std::round(sum));
+        }
+    }
+    return mat;
+}
+
 // Partial specialization for Vector types
-template <typename Dtype, size_t Length>
-class Matrix<Vector<Dtype, Length>>
+template <typename Dtype, int32_t Length>
+class Matrix<Vector<Dtype, Length>, Dynamic, Dynamic>
 {
 public:
     const std::array<size_t, 3> dims;
@@ -105,14 +134,14 @@ public:
     }
 
     // Const accessor
-    Vector<const Dtype, Length> operator()(const size_t row,
-                                           const size_t col) const
+    Vector<Dtype, Length> operator()(const size_t row, const size_t col) const
     {
         return {data_[row * cols * Length + col * Length + 0],
                 data_[row * cols * Length + col * Length + 1],
                 data_[row * cols * Length + col * Length + 2]};
     }
 
+    /*
     // Non-const accessor
     Vector<Dtype, Length> operator()(const size_t row, const size_t col)
     {
@@ -120,6 +149,7 @@ public:
                 data_[row * cols * Length + col * Length + 1],
                 data_[row * cols * Length + col * Length + 2]};
     }
+    */
 
     // Access elements by single index
     const Dtype& operator[](size_t i) const { return data_[i]; }
