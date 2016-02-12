@@ -18,8 +18,11 @@ class IOException : public std::exception
 {
 public:
     explicit IOException(const char* msg) : msg_(msg) {}
+
     explicit IOException(const std::string& msg) : msg_(msg) {}
+
     virtual const char* what() const noexcept { return msg_.c_str(); }
+
 protected:
     std::string msg_;
 };
@@ -45,16 +48,19 @@ public:
     {
         PType type = determine_file_type(filename);
         switch (type) {
-            case PType::BINARY: return read_binary<T>(filename);
-            case PType::ASCII: return read_ascii<T>(filename);
-            case PType::UNKNOWN:
-                throw IOException("Unknown file type, check magic number");
+        case PType::BINARY:
+            return read_binary<T>(filename);
+        case PType::ASCII:
+            return read_ascii<T>(filename);
+        case PType::UNKNOWN:
+            throw IOException("Unknown file type, check magic number");
         }
     }
 
     // char* version
     template <typename T>
-    void write(const Matrix<T, 2>& mat, const char* filename,
+    void write(const Matrix<T, 2>& mat,
+               const char* filename,
                const PType type = PType::BINARY) const
     {
         write<T>(mat, std::string(filename), type);
@@ -62,13 +68,19 @@ public:
 
     // std::string version
     template <typename T>
-    void write(const Matrix<T, 2>& mat, const std::string& filename,
+    void write(const Matrix<T, 2>& mat,
+               const std::string& filename,
                const PType type = PType::BINARY) const
     {
         switch (type) {
-            case PType::ASCII: write_ascii(mat, filename); break;
-            case PType::BINARY: write_binary(mat, filename); break;
-            case PType::UNKNOWN: throw IOException("Unknown file type");
+        case PType::ASCII:
+            write_ascii(mat, filename);
+            break;
+        case PType::BINARY:
+            write_binary(mat, filename);
+            break;
+        case PType::UNKNOWN:
+            throw IOException("Unknown file type");
         }
     }
 

@@ -22,10 +22,12 @@ public:
     // Sized constructor. Dims stored in initializer list and initializes
     // nmemory
     Matrix(std::array<size_t, Dims> ds)
-        : dims(ds),
-          nelements_(std::accumulate(std::begin(dims), std::end(dims),
-                                     size_t(1), std::multiplies<size_t>())),
-          data_(std::unique_ptr<Dtype[]>(new Dtype[sizeof(Dtype) * nelements_]))
+        : dims(ds)
+        , nelements_(std::accumulate(std::begin(dims),
+                                     std::end(dims),
+                                     size_t(1),
+                                     std::multiplies<size_t>()))
+        , data_(std::unique_ptr<Dtype[]>(new Dtype[sizeof(Dtype) * nelements_]))
     {
     }
 
@@ -43,21 +45,29 @@ public:
 
     // Access elements by single index
     const Dtype& operator[](size_t index) const { return data_[index]; }
+
     Dtype& operator[](size_t index) { return data_[index]; }
+
     // Raw accessor for data buffer
     const Dtype* buffer(void) const
     {
         return reinterpret_cast<const Dtype*>(data_.get());
     }
+
     Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.get()); }
+
     // Accessors for the buffer as bytes (for serialization, etc)
     const char* as_bytes(void) const
     {
         return reinterpret_cast<const char*>(data_.get());
     }
+
     char* bytes(void) { return reinterpret_cast<char*>(data_.get()); }
+
     size_t size(void) const { return nelements_; }
+
     size_t size_in_bytes(void) const { return nelements_ * sizeof(Dtype); }
+
 private:
     size_t nelements_;
     std::unique_ptr<Dtype[]> data_;
