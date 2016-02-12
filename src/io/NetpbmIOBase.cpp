@@ -5,7 +5,7 @@ using namespace sipl;
 
 // Process the header of both ASCII and Binary files
 std::tuple<size_t, size_t, size_t> NetpbmIOBase::process_header(
-    std::ifstream& stream) const
+    std::ifstream& stream)
 {
     // Get magic number (must be first string in header)
     std::string _;
