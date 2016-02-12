@@ -1,4 +1,6 @@
 set(IO_SOURCES
+    "${IO_SOURCES}"
     "${CMAKE_CURRENT_SOURCE_DIR}/PGMIO.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/NetpbmIOBase.cpp"
     PARENT_SCOPE
 )

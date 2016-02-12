@@ -19,5 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(include)
+add_subdirectory(src)
 
-add_executable(sipldemo test.cpp include/matrix/Matrix.hpp include/io/PGMIO.hpp src/io/PGMIO.cpp)
+#add_executable(sipldemo test.cpp ${IO_SOURCES} ${MATRIX_SOURCES})
+add_executable(sipldemo test.cpp src/io/NetpbmIOBase.cpp src/io/PGMIO.cpp)
