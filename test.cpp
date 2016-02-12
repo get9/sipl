@@ -1,8 +1,6 @@
 #include <iostream>
-#include <algorithm>
-#include "matrix/Matrix.hpp"
-#include "io/PpmIO.hpp"
 #include "io/PgmIO.hpp"
+#include "io/PpmIO.hpp"
 
 using namespace sipl;
 
@@ -15,15 +13,31 @@ int main(int argc, char** argv)
         std::exit(1);
     }
 
-    PgmIO ppm;
     std::string write_type{argv[3]};
-    auto mat = ppm.read(argv[1]);
-    if (write_type == "ascii") {
-        ppm.write(mat, argv[2], PpmIO::PType::ASCII);
-    } else if (write_type == "binary") {
-        ppm.write(mat, argv[2], PgmIO::PType::BINARY);
+    std::string infile{argv[1]};
+    std::string outfile{argv[2]};
+
+    if (infile[infile.size() - 2] == 'g') {
+        PgmIO reader;
+        auto mat = reader.read(infile);
+        if (write_type == "ascii") {
+            PgmIO::write(mat, argv[2], PgmIO::FileType::ASCII);
+        } else if (write_type == "binary") {
+            PgmIO::write(mat, argv[2], PgmIO::FileType::BINARY);
+        } else {
+            std::cerr << "bad write type" << std::endl;
+            std::exit(1);
+        }
     } else {
-        std::cerr << "bad write type" << std::endl;
-        std::exit(1);
+        PpmIO reader;
+        auto mat = reader.read(infile);
+        if (write_type == "ascii") {
+            reader.write(mat, argv[2], PpmIO::FileType::ASCII);
+        } else if (write_type == "binary") {
+            reader.write(mat, argv[2], PpmIO::FileType::BINARY);
+        } else {
+            std::cerr << "bad write type" << std::endl;
+            std::exit(1);
+        }
     }
 }
