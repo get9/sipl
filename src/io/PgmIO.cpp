@@ -60,6 +60,9 @@ MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
     int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
+    // Get the random byte that is left in the stream after the header
+    stream.get();
+
     // Assert check since I don't know how to do this with templates yet
     assert(maxval <= std::numeric_limits<uint8_t>::max() &&
            "wrong type for matrix");

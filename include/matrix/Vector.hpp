@@ -51,13 +51,13 @@ public:
     // Access elements by single index
     const Dtype& operator[](int32_t index) const
     {
-        assert(index < nelements_ && "out of range");
+        // assert(index >= 0 && index < nelements_ && "out of range");
         return data_[index];
     }
 
     Dtype& operator[](int32_t index)
     {
-        assert(index < nelements_ && "out of range");
+        // assert(index >= 0 && index < nelements_ && "out of range");
         return data_[index];
     }
 

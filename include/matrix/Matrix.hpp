@@ -63,13 +63,13 @@ public:
 
     char* bytes(void) { return reinterpret_cast<char*>(data_.get()); }
 
-    size_t size(void) const { return nelements_; }
+    int32_t size(void) const { return nelements_; }
 
-    size_t size_in_bytes(void) const { return nbytes_; }
+    int32_t size_in_bytes(void) const { return nbytes_; }
 
 private:
-    size_t nelements_;
-    size_t nbytes_;
+    int32_t nelements_;
+    int32_t nbytes_;
     std::unique_ptr<Dtype[]> data_;
 };
 
@@ -106,6 +106,8 @@ Matrix<Dtype, R1, C2> operator*(const Matrix<Dtype, R1, Dynamic>& m1,
     }
     return mat;
 }
+
+/*
 
 // Partial specialization for Vector types
 template <typename Dtype, int32_t Length>
@@ -171,6 +173,7 @@ private:
     size_t nbytes_;
     std::unique_ptr<Dtype[]> data_;
 };
+*/
 }
 
 #endif
