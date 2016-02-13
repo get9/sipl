@@ -57,7 +57,7 @@ MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
     }
 
     // Fill header information
-    size_t height, width, maxval;
+    int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
     // Assert check since I don't know how to do this with templates yet
@@ -79,7 +79,7 @@ MatrixX<uint8_t> PgmIO::read_ascii(const std::string& filename)
     }
 
     // Fill header information
-    size_t height, width, maxval;
+    int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
     MatrixX<uint8_t> mat{height, width};
@@ -127,8 +127,8 @@ void PgmIO::write_ascii(const MatrixX<uint8_t>& mat,
            << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
 
     // Write mat data
-    for (size_t i = 0; i < mat.rows; ++i) {
-        for (size_t j = 0; j < mat.cols; ++j) {
+    for (int32_t i = 0; i < mat.rows; ++i) {
+        for (int32_t j = 0; j < mat.cols; ++j) {
             stream << std::to_string(mat(i, j)) << " ";
         }
         stream << std::endl;

@@ -15,12 +15,12 @@ template <typename Dtype>
 class Matrix<Dtype, Dynamic, Dynamic>
 {
 public:
-    const std::array<size_t, 2> dims;
-    const size_t rows;
-    const size_t cols;
+    const std::array<int32_t, 2> dims;
+    const int32_t rows;
+    const int32_t cols;
 
     // Default constructor, no data
-    Matrix(const size_t rs, const size_t cs)
+    Matrix(const int32_t rs, const int32_t cs)
         : dims({rs, cs})
         , rows(rs)
         , cols(cs)
@@ -31,21 +31,21 @@ public:
     }
 
     // Const accessor
-    const Dtype& operator()(const size_t row, const size_t col) const
+    const Dtype& operator()(const int32_t row, const int32_t col) const
     {
         return data_[row * cols + col];
     }
 
     // Non-const accessor
-    Dtype& operator()(const size_t row, const size_t col)
+    Dtype& operator()(const int32_t row, const int32_t col)
     {
         return data_[row * cols + col];
     }
 
     // Access elements by single index
-    const Dtype& operator[](size_t index) const { return data_[index]; }
+    const Dtype& operator[](int32_t index) const { return data_[index]; }
 
-    Dtype& operator[](size_t index) { return data_[index]; }
+    Dtype& operator[](int32_t index) { return data_[index]; }
 
     // Raw accessor for data buffer
     const Dtype* buffer(void) const
@@ -89,10 +89,10 @@ Matrix<Dtype, R1, C2> operator*(const Matrix<Dtype, R1, Dynamic>& m1,
     constexpr auto min = std::numeric_limits<Dtype>::min();
 
     Matrix<Dtype, Dynamic, Dynamic> mat(m1.rows, m2.cols);
-    for (size_t row = 0; row < m1.rows; ++row) {
-        for (size_t col = 0; col < m2.cols; ++col) {
+    for (int32_t row = 0; row < m1.rows; ++row) {
+        for (int32_t col = 0; col < m2.cols; ++col) {
             double sum = 0;
-            for (size_t inner = 0; inner < m1.cols; ++inner) {
+            for (int32_t inner = 0; inner < m1.cols; ++inner) {
                 if (std::round(sum) >= max) {
                     sum = max;
                 } else if (std::round(sum) <= min) {
@@ -112,9 +112,9 @@ template <typename Dtype, int32_t Length>
 class Matrix<Vector<Dtype, Length>, Dynamic, Dynamic>
 {
 public:
-    const std::array<size_t, 3> dims;
-    const size_t rows;
-    const size_t cols;
+    const std::array<int32_t, 3> dims;
+    const int32_t rows;
+    const int32_t cols;
 
     // Default constructor, no data
     Matrix() : dims({0, 0, 0}), rows(0), cols(0), nelements_(0), data_(nullptr)
@@ -123,7 +123,7 @@ public:
 
     // Sized constructor. 2 stored in initializer list and initializes
     // nmemory
-    Matrix(const size_t rs, const size_t cs)
+    Matrix(const int32_t rs, const int32_t cs)
         : dims({rs, cs, Length})
         , rows(rs)
         , cols(cs)
@@ -134,27 +134,17 @@ public:
     }
 
     // Const accessor
-    Vector<Dtype, Length> operator()(const size_t row, const size_t col) const
+    Vector<Dtype, Length> operator()(const int32_t row, const int32_t col) const
     {
         return {data_[row * cols * Length + col * Length + 0],
                 data_[row * cols * Length + col * Length + 1],
                 data_[row * cols * Length + col * Length + 2]};
     }
-
-    /*
-    // Non-const accessor
-    Vector<Dtype, Length> operator()(const size_t row, const size_t col)
-    {
-        return {data_[row * cols * Length + col * Length + 0],
-                data_[row * cols * Length + col * Length + 1],
-                data_[row * cols * Length + col * Length + 2]};
-    }
-    */
 
     // Access elements by single index
-    const Dtype& operator[](size_t i) const { return data_[i]; }
+    const Dtype& operator[](int32_t i) const { return data_[i]; }
 
-    Dtype& operator[](size_t i) { return data_[i]; }
+    Dtype& operator[](int32_t i) { return data_[i]; }
 
     // Raw accessor for data buffer
     const Dtype* buffer(void) const

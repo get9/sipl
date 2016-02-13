@@ -1,9 +1,49 @@
 #include <iostream>
 #include "io/PgmIO.hpp"
 #include "io/PpmIO.hpp"
+#include "improc/Improc.hpp"
 
 using namespace sipl;
 
+Matrix33d parse_transform(const std::string& filename);
+
+int main(int argc, char** argv)
+{
+    if (argc < 2) {
+        std::cout << "Usage:" << std::endl;
+        std::cout << "    " << argv[0]
+                  << " infile.pgm transform.txt outfile.pgm" << std::endl;
+        std::exit(1);
+    }
+    // Matrix33d transform = {{0.707, 0.707, 0}, {-0.707, 0.707, 0}, {0, 0, 1}};
+    Matrix33d transform = parse_transform(argv[2]);
+    auto mat = PgmIO::read(argv[1]);
+    auto new_mat =
+        projective_transform(mat, transform, InterpolateType::BILINEAR);
+    PgmIO::write(new_mat, argv[3]);
+}
+
+Matrix33d parse_transform(const std::string& filename)
+{
+    std::ifstream stream{filename};
+    if (!stream) {
+        std::cerr << "Couldn't open transform file: " << filename << std::endl;
+        std::exit(1);
+    }
+
+    Matrix33d m;
+    std::string line;
+    for (int32_t i = 0; i < 3; ++i) {
+        std::getline(stream, line);
+        std::stringstream ss{line};
+        ss >> m(i, 0);
+        ss >> m(i, 1);
+        ss >> m(i, 2);
+    }
+    return m;
+}
+
+/*
 int main(int argc, char** argv)
 {
     if (argc < 4) {
@@ -41,3 +81,4 @@ int main(int argc, char** argv)
         }
     }
 }
+*/

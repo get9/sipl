@@ -11,6 +11,7 @@ add_compile_options(-Weverything)
 add_compile_options(-Wno-c++98-compat)
 add_compile_options(-Wno-missing-braces)
 add_compile_options(-Wno-weak-vtables)
+add_compile_options(-Wno-padded)
 
 # Export compile commands for YCM
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -21,10 +22,11 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 include_directories(include)
 add_subdirectory(src)
 
-#add_executable(sipldemo test.cpp ${IO_SOURCES} ${MATRIX_SOURCES})
-add_executable(sipldemo
-    test.cpp
+# List of sources
+set(SIPL_SOURCES
     src/io/NetpbmIOBase.cpp
     src/io/PgmIO.cpp
     src/io/PpmIO.cpp
 )
+
+add_executable(sipldemo test.cpp "${SIPL_SOURCES}")

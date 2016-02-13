@@ -32,7 +32,7 @@ public:
     enum class FileType { BINARY, ASCII, UNKNOWN };
 
 protected:
-    static std::tuple<size_t, size_t, size_t> process_header(
+    static std::tuple<int32_t, int32_t, int32_t> process_header(
         std::ifstream& stream);
 };
 }

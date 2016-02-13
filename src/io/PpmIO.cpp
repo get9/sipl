@@ -58,7 +58,7 @@ MatrixX<RgbPixel> PpmIO::read_binary(const std::string& filename)
     }
 
     // Fill header information
-    size_t height, width, maxval;
+    int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
     // Need to istream::get() because windows is dumb
@@ -83,12 +83,12 @@ MatrixX<RgbPixel> PpmIO::read_ascii(const std::string& filename)
     }
 
     // Fill header information
-    size_t height, width, maxval;
+    int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
     MatrixX<RgbPixel> mat{height, width};
     std::string r_str, g_str, b_str;
-    for (size_t i = 0; i < mat.size(); ++i) {
+    for (int32_t i = 0; i < mat.size(); ++i) {
         stream >> r_str;
         stream >> g_str;
         stream >> b_str;
@@ -135,8 +135,8 @@ void PpmIO::write_ascii(const MatrixX<RgbPixel>& mat,
            << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
 
     // Write mat data
-    for (size_t i = 0; i < mat.rows; ++i) {
-        for (size_t j = 0; j < mat.cols; ++j) {
+    for (int32_t i = 0; i < mat.dims[0]; ++i) {
+        for (int32_t j = 0; j < mat.dims[1]; ++j) {
             auto channel = mat(i, j);
             stream << std::to_string(channel[0]) << " "
                    << std::to_string(channel[1]) << " "

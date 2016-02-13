@@ -7,6 +7,8 @@
 #include <initializer_list>
 #include <limits>
 #include <cmath>
+#include <iostream>
+#include <cassert>
 #include "Constants.hpp"
 
 namespace sipl
@@ -16,15 +18,11 @@ template <typename Dtype, int32_t Rows, int32_t Cols>
 class Matrix
 {
 public:
-    const std::array<size_t, 2> dims;
-    const size_t rows;
-    const size_t cols;
+    const std::array<int32_t, 2> dims;
 
     // Default constructor
     Matrix()
         : dims({Rows, Cols})
-        , rows(Rows)
-        , cols(Cols)
         , nelements_(Rows * Cols)
         , nbytes_(nelements_ * sizeof(Dtype))
         , data_({0})
@@ -34,43 +32,45 @@ public:
     // Initializer list constructor
     Matrix(std::initializer_list<std::initializer_list<Dtype>> list)
         : dims({Rows, Cols})
-        , rows(Rows)
-        , cols(Cols)
         , nelements_(Rows * Cols)
         , nbytes_(nelements_ * sizeof(Dtype))
         , data_({0})
 
     {
         // Safety check
-        static_assert(list.size() == Rows, "initializer list size mismatch");
+        assert(list.size() == Rows && "initializer list size mismatch");
+        int32_t i = 0;
         for (const auto l : list) {
-            static_assert(l.size() == Cols, "initializer list size mismatch");
-        }
-
-        // Fill data from initializer_lists
-        for (size_t i = 0; i < Rows; ++i) {
-            for (size_t j = 0; j < Cols; ++i) {
-                data_[i * Cols + j] = list[i][j];
-            }
+            assert(l.size() == Cols && "initializer list size mismatch");
+            std::copy(
+                std::begin(l), std::end(l), std::begin(data_) + i++ * l.size());
         }
     }
 
     // Const accessor
-    const Dtype& operator()(const size_t row, const size_t col) const
+    const Dtype& operator()(const int32_t row, const int32_t col) const
     {
-        return data_[row * cols + col];
+        return data_[row * dims[1] + col];
     }
 
     // Non-const accessor
-    Dtype& operator()(const size_t row, const size_t col)
+    Dtype& operator()(const int32_t row, const int32_t col)
     {
-        return data_[row * cols + col];
+        return data_[row * dims[1] + col];
     }
 
     // Access elements by single index
-    const Dtype& operator[](size_t index) const { return data_[index]; }
+    const Dtype& operator[](int32_t index) const
+    {
+        assert(index < nelements_ && "out of range");
+        return data_[index];
+    }
 
-    Dtype& operator[](size_t index) { return data_[index]; }
+    Dtype& operator[](int32_t index)
+    {
+        assert(index < nelements_ && "out of range");
+        return data_[index];
+    }
 
     // Raw accessor for data buffer
     const Dtype* buffer(void) const
@@ -92,70 +92,111 @@ public:
 
     size_t size_in_bytes(void) const { return nbytes_; }
 
-    /*
-    Vector<Dtype> operator*(const Vector<Dtype>& v) const
+    // Operator = for static matrices
+    template <typename T>
+    Matrix<Dtype, Rows, Cols>& operator=(Matrix<T, Rows, Cols> other)
     {
-        assert(cols == v.size() && "cols and vector size do not match up");
-
-        // For clamping
-        constexpr auto max = std::numeric_limits<Dtype>::max();
-        constexpr auto min = std::numeric_limits<Dtype>::min();
-
-        Vector<Dtype> new_v(v.size());
-        for (size_t row = 0; row < rows; ++row) {
-            for (size_t col = 0; col < cols; ++col) {
-                double sum = 0;
-                if (std::round(sum) >= max)) {
-                        sum = max;
-                    }
-                else if (std::round(sum) = < min) {
-                    sum = min;
-                } else {
-                    sum += (*this)(row, col) * v[col];
-                }
+        for (int32_t i = 0; i < Rows; ++i) {
+            for (int32_t j = 0; j < Cols; ++j) {
+                (*this)(i, j) = Dtype(other(i, j));
             }
-            new_v[row] = Dtype(std::round(sum));
         }
+        return *this;
     }
-    */
+
+    template <typename Scalar>
+    Matrix<Dtype, Rows, Cols>& operator/=(const Scalar s)
+    {
+        for (int32_t i = 0; i < dims[0]; ++i) {
+            for (int32_t j = 0; j < dims[1]; ++j) {
+                (*this)(i, j) /= s;
+            }
+        }
+        return *this;
+    }
+
+    // Matrix mul for statically-defined types
+    template <typename T, int32_t R2, int32_t C2>
+    Matrix<Dtype, Rows, C2> operator*(const Matrix<T, R2, C2>& m2) const
+    {
+        static_assert(
+            C2 != Dynamic,
+            "wrong matrix mul routine used - this is for static matrices");
+        static_assert(R2 == dims[1], "size mismatch");
+
+        Matrix<Dtype, Rows, C2> mat;
+        for (int32_t row = 0; row < dims[0]; ++row) {
+            for (int32_t col = 0; col < m2.dims[1]; ++col) {
+                Dtype sum = 0;
+                for (int32_t inner = 0; inner < dims[1]; ++inner) {
+                    sum += data_[row * dims[1] + inner] *
+                           m2[inner * m2.dims[1] + col];
+                }
+                mat[col * m2.dims[1] + row] = sum;
+            }
+        }
+        return mat;
+    }
+
+    // Matrix mul for statically-defined vectors
+    template <typename T, int32_t Length>
+    Matrix<Dtype, Rows, 1> operator*(const Matrix<T, Length, 1>& v) const
+    {
+        static_assert(Length == Cols,
+                      "Vector must be the same length as number of columns");
+        Matrix<Dtype, Rows, 1> res;
+        for (int32_t row = 0; row < dims[0]; ++row) {
+            Dtype sum = 0;
+            for (int32_t col = 0; col < Length; ++col) {
+                sum += data_[row * dims[1] + col] * v[col];
+            }
+            res[row] = sum;
+        }
+
+        return res;
+    }
 
 private:
     size_t nelements_;
     size_t nbytes_;
-    std::unique_ptr<Dtype[]> data_;
+    std::array<Dtype, Rows * Cols> data_;
 };
 
-// Matrix mul for statically-defined types
-template <typename Dtype, int32_t R1, int32_t C1, int32_t R2, int32_t C2>
-Matrix<Dtype, R1, C2> operator*(const Matrix<Dtype, R1, C1>& m1,
-                                const Matrix<Dtype, R2, C2>& m2)
+template <typename T, typename Scalar, int32_t Rows, int32_t Cols>
+Matrix<Scalar, Rows, Cols> operator/(const Matrix<T, Rows, Cols> m,
+                                     const Scalar s)
 {
-    static_assert(
-        !(R1 == Dynamic || C1 == Dynamic || R2 == Dynamic || C2 == Dynamic),
-        "wrong matrix mul routine used - this is for static matrices");
-    static_assert(C1 == R2, "m1 cols must equal m2 rows");
-
-    // For clamping
-    constexpr auto max = std::numeric_limits<Dtype>::max();
-    constexpr auto min = std::numeric_limits<Dtype>::min();
-
-    Matrix<Dtype, R1, C2> mat;
-    for (size_t row = 0; row < m1.rows; ++row) {
-        for (size_t col = 0; col < m2.cols; ++col) {
-            double sum = 0;
-            for (size_t inner = 0; inner < m1.cols; ++inner) {
-                if (std::round(sum) >= max) {
-                    sum = max;
-                } else if (std::round(sum) <= min) {
-                    sum = min;
-                } else {
-                    sum += m1(row, inner) * m2(inner, col);
-                }
-            }
-            mat(row, col) = Dtype(std::round(sum));
+    assert((s - 1e-10) != 0 && "precision issues");
+    Matrix<Scalar, Rows, Cols> new_m;
+    for (int32_t i = 0; i < Rows; ++i) {
+        for (int32_t j = 0; j < Cols; ++j) {
+            new_m(i, j) = Scalar(m(i, j) / s);
         }
     }
-    return mat;
+
+    return new_m;
+}
+
+// Aliases for sized matrices
+template <typename Dtype>
+using Matrix33 = Matrix<Dtype, 3, 3>;
+using Matrix33d = Matrix33<double>;
+using Matrix33f = Matrix33<float>;
+using Matrix33i = Matrix33<int32_t>;
+
+template <typename T, int32_t Rows, int32_t Cols>
+std::ostream& operator<<(std::ostream& s, const Matrix<T, Rows, Cols>& m)
+{
+    for (int32_t i = 0; i < Rows - 1; ++i) {
+        for (int32_t j = 0; j < Cols; ++j) {
+            s << m(i, j) << " ";
+        }
+        s << std::endl;
+    }
+    for (int32_t j = 0; j < Cols; ++j) {
+        s << m(Rows - 1, j) << " ";
+    }
+    return s;
 }
 }
 
