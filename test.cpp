@@ -18,8 +18,8 @@ int main(int argc, char** argv)
     // Matrix33d transform = {{0.707, 0.707, 0}, {-0.707, 0.707, 0}, {0, 0, 1}};
     Matrix33d transform = parse_transform(argv[2]);
     auto mat = PgmIO::read(argv[1]);
-    auto new_mat =
-        projective_transform(mat, transform, InterpolateType::BILINEAR);
+    auto new_mat = projective_transform<uint8_t, double>(
+        mat, transform, InterpolateType::BILINEAR);
     PgmIO::write(new_mat, argv[3]);
 }
 

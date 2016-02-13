@@ -70,7 +70,11 @@ MatrixX<RgbPixel> PpmIO::read_binary(const std::string& filename)
 
     // Read binary data directly into the Matrix's data buffer
     MatrixX<RgbPixel> mat{height, width};
-    stream.read(mat.bytes(), ssize_t(mat.size_in_bytes()));
+    for (int32_t i = 0; i < mat.size(); ++i) {
+        uint8_t buf[3];
+        stream.read(reinterpret_cast<char*>(buf), 3);
+        mat[i] = {buf[0], buf[1], buf[2]};
+    }
     return mat;
 }
 
@@ -92,9 +96,9 @@ MatrixX<RgbPixel> PpmIO::read_ascii(const std::string& filename)
         stream >> r_str;
         stream >> g_str;
         stream >> b_str;
-        mat[i * 3 + 0] = uint8_t(std::stoul(r_str));
-        mat[i * 3 + 1] = uint8_t(std::stoul(g_str));
-        mat[i * 3 + 2] = uint8_t(std::stoul(b_str));
+        mat[i] = {uint8_t(std::stoul(r_str)),
+                  uint8_t(std::stoul(g_str)),
+                  uint8_t(std::stoul(b_str))};
     }
 
     return mat;
@@ -117,7 +121,10 @@ void PpmIO::write_binary(const MatrixX<RgbPixel>& mat,
     stream.write(ss.str().c_str(), ssize_t(ss.str().size()));
 
     // Write mat data
-    stream.write(mat.as_bytes(), ssize_t(mat.size_in_bytes()));
+    for (int32_t i = 0; i < mat.size(); ++i) {
+        uint8_t buf[] = {mat[i](0), mat[i](1), mat[i](2)};
+        stream.write(reinterpret_cast<const char*>(buf), 3);
+    }
 }
 
 // Write binary file
