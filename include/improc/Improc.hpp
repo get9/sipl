@@ -68,6 +68,19 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
     auto c3 = homogenize(transform * Vector3d{double(image.dims[1]) - 0.5,
                                               double(image.dims[0]) - 0.5,
                                               1});
+    // Raise or lower values as needed
+    for (int32_t i = 0; i < 3; ++i) {
+        c0[i] = std::round(c0[i]);
+    }
+    for (int32_t i = 0; i < 3; ++i) {
+        c1[i] = std::round(c1[i]);
+    }
+    for (int32_t i = 0; i < 3; ++i) {
+        c2[i] = std::round(c2[i]);
+    }
+    for (int32_t i = 0; i < 3; ++i) {
+        c3[i] = std::round(c3[i]);
+    }
 
     int32_t ymin = std::min({c0[1], c1[1], c2[1], c3[1]});
     int32_t ymax = std::max({c0[1], c1[1], c2[1], c3[1]});
@@ -134,7 +147,6 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
             }
         }
     }
-    std::cout << std::to_string(new_image(99, 71)) << std::endl;
     return new_image;
 }
 

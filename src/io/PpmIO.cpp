@@ -73,7 +73,12 @@ MatrixX<RgbPixel> PpmIO::read_binary(const std::string& filename)
     for (int32_t i = 0; i < mat.size(); ++i) {
         uint8_t buf[3];
         stream.read(reinterpret_cast<char*>(buf), 3);
-        mat[i] = {buf[0], buf[1], buf[2]};
+
+        // Spell this out explicitly for Windows since it can't deduce the
+        // template for some reason
+        for (int32_t p = 0; p < 3; ++p) {
+            mat[i][p] = buf[p];
+        }
     }
     return mat;
 }
@@ -91,14 +96,14 @@ MatrixX<RgbPixel> PpmIO::read_ascii(const std::string& filename)
     std::tie(height, width, maxval) = process_header(stream);
 
     MatrixX<RgbPixel> mat{height, width};
-    std::string r_str, g_str, b_str;
+    std::string pixval;
     for (int32_t i = 0; i < mat.size(); ++i) {
-        stream >> r_str;
-        stream >> g_str;
-        stream >> b_str;
-        mat[i] = {uint8_t(std::stoul(r_str)),
-                  uint8_t(std::stoul(g_str)),
-                  uint8_t(std::stoul(b_str))};
+        // Spell this out for windows since it can't deduce the template for
+        // some reason
+        for (int32_t p = 0; p < 3; ++p) {
+            stream >> pixval;
+            mat[i][p] = uint8_t(std::stoul(pixval));
+        }
     }
 
     return mat;
@@ -118,7 +123,7 @@ void PpmIO::write_binary(const MatrixX<RgbPixel>& mat,
     ss << "P6" << std::endl
        << mat.dims[1] << " " << mat.dims[0] << std::endl
        << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
-    stream.write(ss.str().c_str(), ssize_t(ss.str().size()));
+    stream.write(ss.str().c_str(), int64_t(ss.str().size()));
 
     // Write mat data
     for (int32_t i = 0; i < mat.size(); ++i) {

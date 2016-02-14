@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include "io/PgmIO.hpp"
 #include "io/PpmIO.hpp"
 #include "improc/Improc.hpp"
@@ -6,21 +7,71 @@
 using namespace sipl;
 
 Matrix33d parse_transform(const std::string& filename);
+void parse_commandline(int32_t, char** argv);
+
+// Possible actions
+enum class ActionType { COLOR_CONVERT, TRANSFORM, UNKNOWN };
+
+// Globals for command line args
+std::string g_infile;
+std::string g_outfile;
+std::string g_transform_file;
+ActionType g_action = ActionType::UNKNOWN;
+InterpolateType g_interpolate_type;
 
 int main(int argc, char** argv)
 {
     if (argc < 2) {
         std::cout << "Usage:" << std::endl;
-        std::cout << "    " << argv[0]
-                  << " infile.pgm transform.txt outfile.pgm" << std::endl;
+        std::cout << "    " << argv[0] << " -i inputFileName -o outputFileName "
+                                          "[-c|{-p transformFileName N|B}]"
+                  << std::endl;
         std::exit(1);
     }
-    // Matrix33d transform = {{0.707, 0.707, 0}, {-0.707, 0.707, 0}, {0, 0, 1}};
-    Matrix33d transform = parse_transform(argv[2]);
-    auto mat = PgmIO::read(argv[1]);
-    auto new_mat = projective_transform<uint8_t, double>(
-        mat, transform, InterpolateType::BILINEAR);
-    PgmIO::write(new_mat, argv[3]);
+
+    // Parse command line args
+    parse_commandline(argc, argv);
+
+    // Do work
+    switch (g_action) {
+
+    // Convert from rgb --> gray
+    case ActionType::COLOR_CONVERT:
+        if (g_infile.rfind(".pgm") != std::string::npos) {
+            std::cerr << "[error]: trying to convert grayscale image"
+                      << std::endl;
+            std::exit(1);
+        } else {
+            auto gray_mat = color_to_grayscale(PpmIO::read(g_infile));
+            PgmIO::write(gray_mat, g_outfile);
+        }
+        break;
+
+    // Perform projective transform
+    case ActionType::TRANSFORM: {
+        auto transform = parse_transform(g_transform_file);
+        if (g_infile.rfind(".pgm") != std::string::npos) {
+            auto mat = PgmIO::read(g_infile);
+            auto transformed_mat = projective_transform<uint8_t, double>(
+                mat, transform, g_interpolate_type);
+            PgmIO::write(transformed_mat, g_outfile);
+        } else if (g_infile.rfind(".ppm") != std::string::npos) {
+            auto mat = PpmIO::read(g_infile);
+            auto transformed_mat = projective_transform<Vector3b, Vector3d>(
+                mat, transform, g_interpolate_type);
+            PpmIO::write(transformed_mat, g_outfile);
+        } else {
+            std::cerr << "[error]: unknown file type" << std::endl;
+            std::exit(1);
+        }
+        break;
+    }
+
+    // Error
+    case ActionType::UNKNOWN:
+        std::cerr << "[error]: unknown action type" << std::endl;
+        std::exit(1);
+    }
 }
 
 Matrix33d parse_transform(const std::string& filename)
@@ -43,42 +94,30 @@ Matrix33d parse_transform(const std::string& filename)
     return m;
 }
 
-/*
-int main(int argc, char** argv)
+void parse_commandline(int32_t argc, char** argv)
 {
-    if (argc < 4) {
-        std::cout << "Usage:" << std::endl;
-        std::cout << "    " << argv[0]
-                  << " infile.pgm outfile.pgm [ascii/binary]" << std::endl;
-        std::exit(1);
-    }
-
-    std::string write_type{argv[3]};
-    std::string infile{argv[1]};
-    std::string outfile{argv[2]};
-
-    if (infile[infile.size() - 2] == 'g') {
-        PgmIO reader;
-        auto mat = reader.read(infile);
-        if (write_type == "ascii") {
-            PgmIO::write(mat, argv[2], PgmIO::FileType::ASCII);
-        } else if (write_type == "binary") {
-            PgmIO::write(mat, argv[2], PgmIO::FileType::BINARY);
-        } else {
-            std::cerr << "bad write type" << std::endl;
-            std::exit(1);
+    int32_t i = 1;
+    while (argv[i] != nullptr && i < argc) {
+        if (std::strncmp(argv[i], "-i", std::strlen(argv[i])) == 0) {
+            ++i;
+            g_infile = std::string(argv[i]);
+        } else if (std::strncmp(argv[i], "-o", std::strlen(argv[i])) == 0) {
+            ++i;
+            g_outfile = std::string(argv[i]);
+        } else if (std::strncmp(argv[i], "-c", std::strlen(argv[i])) == 0) {
+            ++i;
+            g_action = ActionType::COLOR_CONVERT;
+        } else if (std::strncmp(argv[i], "-p", std::strlen(argv[i])) == 0) {
+            ++i;
+            g_action = ActionType::TRANSFORM;
+            g_transform_file = std::string(argv[i]);
+            ++i;
+            if (std::strncmp(argv[i], "N", 1) == 0) {
+                g_interpolate_type = InterpolateType::NEAREST_NEIGHBOR;
+            } else {
+                g_interpolate_type = InterpolateType::BILINEAR;
+            }
         }
-    } else {
-        PpmIO reader;
-        auto mat = reader.read(infile);
-        if (write_type == "ascii") {
-            reader.write(mat, argv[2], PpmIO::FileType::ASCII);
-        } else if (write_type == "binary") {
-            reader.write(mat, argv[2], PpmIO::FileType::BINARY);
-        } else {
-            std::cerr << "bad write type" << std::endl;
-            std::exit(1);
-        }
+        ++i;
     }
 }
-*/

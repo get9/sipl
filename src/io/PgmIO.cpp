@@ -69,7 +69,7 @@ MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
 
     // Read binary data directly into the Matrix's data buffer
     MatrixX<uint8_t> mat{height, width};
-    stream.read(mat.bytes(), ssize_t(mat.size_in_bytes()));
+    stream.read(mat.bytes(), int64_t(mat.size_in_bytes()));
     return mat;
 }
 
@@ -87,7 +87,7 @@ MatrixX<uint8_t> PgmIO::read_ascii(const std::string& filename)
 
     MatrixX<uint8_t> mat{height, width};
     std::string pixval;
-    for (size_t i = 0; i < mat.size(); ++i) {
+    for (int32_t i = 0; i < mat.size(); ++i) {
         stream >> pixval;
         mat[i] = uint8_t(std::stoul(pixval));
     }
@@ -109,10 +109,10 @@ void PgmIO::write_binary(const MatrixX<uint8_t>& mat,
     ss << "P5" << std::endl
        << mat.dims[1] << " " << mat.dims[0] << std::endl
        << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
-    stream.write(ss.str().c_str(), ssize_t(ss.str().size()));
+    stream.write(ss.str().c_str(), int64_t(ss.str().size()));
 
     // Write mat data
-    stream.write(mat.as_bytes(), ssize_t(mat.size_in_bytes()));
+    stream.write(mat.as_bytes(), int64_t(mat.size_in_bytes()));
 }
 
 // Write binary file
