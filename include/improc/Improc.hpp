@@ -81,6 +81,7 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
     for (int32_t i = 0; i < 3; ++i) {
         c3[i] = std::round(c3[i]);
     }
+
     int32_t ymin = std::min({c0[1], c1[1], c2[1], c3[1]});
     int32_t ymax = std::max({c0[1], c1[1], c2[1], c3[1]});
     int32_t xmin = std::min({c0[0], c1[0], c2[0], c3[0]});
@@ -146,6 +147,7 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
             }
         }
     }
+    std::cout << std::to_string(new_image(99, 71)) << std::endl;
     return new_image;
 }
 
