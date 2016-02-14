@@ -37,6 +37,8 @@ There are a few modules in the source:
 * improc
     - Image processing routines
     - convert_to_grayscale(), projective_transform live here
+* test.cpp
+    - The main test driver for all the other code and routines
 
 
 ================================================================================
