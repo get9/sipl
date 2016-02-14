@@ -106,16 +106,17 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
 
             // Need to interpolate
             switch (interpolator) {
-			case InterpolateType::NEAREST_NEIGHBOR: {
-				int32_t y = int32_t(std::round(xy[1]));
-				int32_t x = int32_t(std::round(xy[0]));
-				if (x < 0 || x >= image.dims[1] || y < 0 || y >= image.dims[0]) {
-					new_image(i, j) = T(0);
-				} else {
-					new_image(i, j) = image(y, x);
-				}
-				break;
-			}
+            case InterpolateType::NEAREST_NEIGHBOR: {
+                int32_t y = int32_t(std::round(xy[1]));
+                int32_t x = int32_t(std::round(xy[0]));
+                if (x < 0 || x >= image.dims[1] || y < 0 ||
+                    y >= image.dims[0]) {
+                    new_image(i, j) = T(0);
+                } else {
+                    new_image(i, j) = image(y, x);
+                }
+                break;
+            }
             case InterpolateType::BILINEAR:
                 // Get four pixel values closest to this
                 int32_t floor_row = std::floor(xy[1]);
@@ -124,14 +125,13 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
                 int32_t ceil_col = std::ceil(xy[0]);
 
                 // Set to 0 if these are outside the range
-                if (floor_row < 0 || floor_row >= image.rows ||
-                    floor_col < 0 || floor_col >= image.cols ||
-                    ceil_row < 0 || ceil_row >= image.rows || ceil_col < 0 ||
+                if (floor_row < 0 || floor_row >= image.rows || floor_col < 0 ||
+                    floor_col >= image.cols || ceil_row < 0 ||
+                    ceil_row >= image.rows || ceil_col < 0 ||
                     ceil_col >= image.cols) {
                     new_image(i, j) = T(0);
-					continue;
+                    continue;
                 }
-				//std::cout << "fr: " << floor_row << " " << "fc: " << floor_col << " " << "cr: " << ceil_row << " " << "cc: " << ceil_col << std::endl;
 
                 // Do first interpolation (along columns)
                 InternalT tmp_i1 =
