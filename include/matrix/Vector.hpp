@@ -92,10 +92,10 @@ public:
     }
 
     template <typename T>
-    Matrix<Dtype, Length, 1>& operator=(Matrix<Dtype, Length, 1> v)
+    Matrix<Dtype, Length, 1>& operator=(Matrix<T, Length, 1> v)
     {
         for (int32_t i = 0; i < Length; ++i) {
-            data_[i] = v[i];
+            data_[i] = Dtype(v[i]);
         }
         return *this;
     }
