@@ -1,4 +1,6 @@
+================================================================================
 Simple Image Processing Library
+================================================================================
 
 This library is the start of a very simple, basic image processing library. The
 main files are all included in both the include/ and src/ directories. Under
@@ -7,6 +9,23 @@ types used throughout - mainly the matrix/vector types. Under the src/ directory
 you can find implementations of the I/O routines (for PGM and PPM).
 
 
+================================================================================
+Building the project
+If you would like to build the project, it uses a CMake-based project structure.
+Assuming you have CMake installed, you can run the following in a terminal:
+
+    mkdir build && cd build
+    cmake -G"Visual Studio 14 2015" ..
+
+which will then generate all the Visual Studio-specific files and generate the
+correct build targets. You can then open the project in VS.
+
+See here: https://cmake.org/cmake/help/v3.5/manual/cmake-generators.7.html
+for a list of all the generators available and you can select your specific
+VS version.
+
+
+================================================================================
 Code Layout
 There are a few modules in the source:
 
@@ -20,6 +39,7 @@ There are a few modules in the source:
     - convert_to_grayscale(), projective_transform live here
 
 
+================================================================================
 Usage
 The usage of the program is as described in the problem statement:
 
@@ -33,3 +53,9 @@ where:
     -p: transformation matrix file used to transform input file
     [N/B]: Nearest neighbor interpolation/Bilinear interpolation for
            transformation
+
+
+================================================================================
+Bugs
+Currently, some of the output files do differ (mainly those from the
+output of the transformations). The output is visually the same.
