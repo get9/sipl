@@ -147,7 +147,6 @@ MatrixX<T> projective_transform(const MatrixX<T>& image,
             }
         }
     }
-    std::cout << std::to_string(new_image(99, 71)) << std::endl;
     return new_image;
 }
 
