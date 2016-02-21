@@ -5,14 +5,16 @@ project(SIPL)
 set(CMAKE_CXX_STANDARD 14)
 
 # Set CXX_FLAGS so ninja output is colorized
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always -Weverything -Wno-c++98-compat")
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    add_compile_options(-Weverything)
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_compile_options(-Wall)
+    add_compile_options(-Wpedantic)
     add_compile_options(-Wno-c++98-compat)
     add_compile_options(-fdiagnostics-color=always)
     add_compile_options(-Wno-missing-braces)
     add_compile_options(-Wno-weak-vtables)
     add_compile_options(-Wno-padded)
+    add_compile_options(-Wno-sign-conversion)
+    add_compile_options(-Werror)
 endif()
 
 # Export compile commands for YCM
