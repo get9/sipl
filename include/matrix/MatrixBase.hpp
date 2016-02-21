@@ -18,57 +18,74 @@ template <typename Dtype, int32_t Rows, int32_t Cols>
 class Matrix
 {
 public:
-    const std::array<int32_t, 2> dims;
+    const std::array<int32_t, 2> dims = {Rows, Cols};
 
     // Default constructor
     Matrix()
-        : dims({Rows, Cols})
-        , nelements_(Rows * Cols)
-        , nbytes_(nelements_ * sizeof(Dtype))
+        : nelements_(Rows * Cols)
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_({0})
     {
     }
 
     // Initializer list constructor
     Matrix(std::initializer_list<std::initializer_list<Dtype>> list)
-        : dims({Rows, Cols})
-        , nelements_(Rows * Cols)
-        , nbytes_(nelements_ * sizeof(Dtype))
-        , data_({0})
+        : nelements_(Rows * Cols), nbytes_(nelements_ * int32_t(sizeof(Dtype)))
 
     {
         // Safety check
+        // XXX Since std::initializer_list::size() is not marked constexpr, we
+        // must use regular assert() instead of static_assert()
         assert(list.size() == Rows && "initializer list size mismatch");
-        int32_t i = 0;
-        for (const auto l : list) {
+        size_t i = 0;
+        for (const auto& l : list) {
             assert(l.size() == Cols && "initializer list size mismatch");
             std::copy(
                 std::begin(l), std::end(l), std::begin(data_) + i++ * l.size());
         }
     }
 
+    Matrix(Matrix&& other)
+        : nelements_(other.dims[0] * other.dims[1])
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(std::move(other.data_))
+    {
+    }
+
+    Matrix(const Matrix& other)
+    {
+        for (int32_t i = 0; i < other.size(); ++i) {
+            data_[i] = other[i];
+        }
+        return *this;
+    }
+
     // Const accessor
     const Dtype& operator()(const int32_t row, const int32_t col) const
     {
+        assert(row >= 0 && row < dims[0] && "out of range");
+        assert(col >= 0 && col < dims[1] && "out of range");
         return data_[row * dims[1] + col];
     }
 
     // Non-const accessor
     Dtype& operator()(const int32_t row, const int32_t col)
     {
+        assert(row >= 0 && row < dims[0] && "out of range");
+        assert(col >= 0 && col < dims[1] && "out of range");
         return data_[row * dims[1] + col];
     }
 
     // Access elements by single index
     const Dtype& operator[](int32_t index) const
     {
-        assert(index < nelements_ && "out of range");
+        assert(index >= 0 && index < nelements_ && "out of range");
         return data_[index];
     }
 
     Dtype& operator[](int32_t index)
     {
-        assert(index < nelements_ && "out of range");
+        assert(index >= 0 && index < nelements_ && "out of range");
         return data_[index];
     }
 
@@ -86,20 +103,29 @@ public:
         return reinterpret_cast<const char*>(data_);
     }
 
-    char* bytes(void) { return reinterpret_cast<char*>(data_.data()); }
+    char* as_bytes(void) { return reinterpret_cast<char*>(data_.data()); }
 
-    size_t size(void) const { return nelements_; }
+    int32_t size(void) const { return nelements_; }
 
-    size_t size_in_bytes(void) const { return nbytes_; }
+    int32_t size_in_bytes(void) const { return nbytes_; }
+
+    // Cast operator
+    template <typename CastType>
+    Matrix<CastType, Rows, Cols> as_type() const
+    {
+        Matrix<CastType, Rows, Cols> new_mat;
+        for (int32_t i = 0; i < nelements_; ++i) {
+            new_mat[i] = CastType((*this)[i]);
+        }
+        return new_mat;
+    }
 
     // Operator = for static matrices
     template <typename T>
     Matrix<Dtype, Rows, Cols>& operator=(Matrix<T, Rows, Cols> other)
     {
-        for (int32_t i = 0; i < Rows; ++i) {
-            for (int32_t j = 0; j < Cols; ++j) {
-                (*this)(i, j) = Dtype(other(i, j));
-            }
+        for (int32_t i = 0; i < nelements_; ++i) {
+            data_[i] = other[i];
         }
         return *this;
     }
@@ -157,8 +183,8 @@ public:
     }
 
 private:
-    size_t nelements_;
-    size_t nbytes_;
+    int32_t nelements_;
+    int32_t nbytes_;
     std::array<Dtype, Rows * Cols> data_;
 };
 
@@ -166,15 +192,39 @@ template <typename T, typename Scalar, int32_t Rows, int32_t Cols>
 Matrix<Scalar, Rows, Cols> operator/(const Matrix<T, Rows, Cols> m,
                                      const Scalar s)
 {
-    assert((s - 1e-10) != 0 && "precision issues");
+    assert(std::fabs(s - 1e-10) >= 0 && "precision issues");
     Matrix<Scalar, Rows, Cols> new_m;
-    for (int32_t i = 0; i < Rows; ++i) {
-        for (int32_t j = 0; j < Cols; ++j) {
+    for (int32_t i = 0; i < m.dims[0]; ++i) {
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
             new_m(i, j) = Scalar(m(i, j) / s);
         }
     }
 
     return new_m;
+}
+
+template <typename T, typename Scalar, int32_t Rows, int32_t Cols>
+Matrix<Scalar, Rows, Cols> operator*(const Scalar s,
+                                     const Matrix<T, Rows, Cols> m)
+{
+    assert(std::fabs(s - 1e-10) >= 0 && "precision issues");
+    Matrix<Scalar, Rows, Cols> new_m;
+    for (int32_t i = 0; i < m.dims[0]; ++i) {
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
+            new_m(i, j) = Scalar(s * m(i, j));
+        }
+    }
+
+    return new_m;
+}
+
+template <typename T, typename Scalar, int32_t Rows, int32_t Cols>
+Matrix<Scalar, Rows, Cols> operator*(const Matrix<T, Rows, Cols> m,
+                                     const Scalar s)
+
+{
+    assert((s - 1e-10) != 0 && "precision issues");
+    return s * m;
 }
 
 // Aliases for sized matrices

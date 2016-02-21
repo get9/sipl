@@ -24,8 +24,8 @@ public:
         : dims({rs, cs})
         , rows(rs)
         , cols(cs)
-        , nelements_(rs * cs)
-        , nbytes_(nelements_ * sizeof(Dtype))
+        , nelements_(int32_t(rs * cs))
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]))
     {
     }
@@ -107,73 +107,44 @@ Matrix<Dtype, R1, C2> operator*(const Matrix<Dtype, R1, Dynamic>& m1,
     return mat;
 }
 
-/*
-
-// Partial specialization for Vector types
-template <typename Dtype, int32_t Length>
-class Matrix<Vector<Dtype, Length>, Dynamic, Dynamic>
+template <typename T, typename Scalar>
+Matrix<Scalar, Dynamic, Dynamic> operator/(const Matrix<T, Dynamic, Dynamic> m,
+                                           const Scalar s)
 {
-public:
-    const std::array<int32_t, 3> dims;
-    const int32_t rows;
-    const int32_t cols;
-
-    // Default constructor, no data
-    Matrix() : dims({0, 0, 0}), rows(0), cols(0), nelements_(0), data_(nullptr)
-    {
+    assert((s - 1e-10) != 0 && "precision issues");
+    Matrix<Scalar, Dynamic, Dynamic> new_m(m.dims[0], m.dims[1]);
+    for (int32_t i = 0; i < m.dims[0]; ++i) {
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
+            new_m(i, j) = Scalar(m(i, j) / s);
+        }
     }
 
-    // Sized constructor. 2 stored in initializer list and initializes
-    // nmemory
-    Matrix(const int32_t rs, const int32_t cs)
-        : dims({rs, cs, Length})
-        , rows(rs)
-        , cols(cs)
-        , nelements_(rows * cols)
-        , nbytes_(nelements_ * sizeof(Dtype) * Length)
-        , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_ * Length]))
-    {
+    return new_m;
+}
+
+template <typename T, typename Scalar>
+Matrix<Scalar, Dynamic, Dynamic> operator*(const Scalar s,
+                                           const Matrix<T, Dynamic, Dynamic> m)
+{
+    assert((s - 1e-10) != 0 && "precision issues");
+    Matrix<Scalar, Dynamic, Dynamic> new_m(m.rows, m.cols);
+    for (int32_t i = 0; i < m.dims[0]; ++i) {
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
+            new_m(i, j) = Scalar(s * m(i, j));
+        }
     }
 
-    // Const accessor
-    Vector<Dtype, Length> operator()(const int32_t row, const int32_t col) const
-    {
-        return {data_[row * cols * Length + col * Length + 0],
-                data_[row * cols * Length + col * Length + 1],
-                data_[row * cols * Length + col * Length + 2]};
-    }
+    return new_m;
+}
 
-    // Access elements by single index
-    const Dtype& operator[](int32_t i) const { return data_[i]; }
+template <typename T, typename Scalar>
+Matrix<Scalar, Dynamic, Dynamic> operator*(const Matrix<T, Dynamic, Dynamic> m,
+                                           const Scalar s)
 
-    Dtype& operator[](int32_t i) { return data_[i]; }
-
-    // Raw accessor for data buffer
-    const Dtype* buffer(void) const
-    {
-        return reinterpret_cast<const Dtype*>(data_.get());
-    }
-
-    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.get()); }
-
-    // Accessors for the buffer as bytes (for serialization, etc)
-    const char* as_bytes(void) const
-    {
-        return reinterpret_cast<const char*>(data_.get());
-    }
-
-    char* bytes(void) { return reinterpret_cast<char*>(data_.get()); }
-
-    size_t size(void) const { return nelements_; }
-
-    size_t size_in_bytes(void) const { return nbytes_; }
-
-private:
-    size_t nelements_;
-    size_t nbytes_;
-    std::unique_ptr<Dtype[]> data_;
-};
-*/
+{
+    assert((s - 1e-10) != 0 && "precision issues");
+    return s * m;
+}
 }
 
 #endif
