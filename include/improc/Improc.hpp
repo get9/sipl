@@ -16,7 +16,7 @@ namespace sipl
 enum class InterpolateType { NEAREST_NEIGHBOR, BILINEAR };
 
 // Specialized inverse for mat33d
-static Matrix33d inv(const Matrix33d& m)
+static inline Matrix33d inv(const Matrix33d& m)
 {
     double determinant = m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) -
                          m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
@@ -117,6 +117,17 @@ MatrixX<uint8_t> color_to_grayscale(const MatrixX<RgbPixel>& color)
     }
 
     return grayscale;
+}
+
+template <typename Dtype>
+VectorX<int32_t> histogram(const MatrixX<Dtype>& mat)
+{
+    const auto max = std::numeric_limits<Dtype>::max();
+    VectorX<int32_t> hist(max);
+    for (int32_t i = 0; i < mat.size(); ++i) {
+        hist[mat[i]]++;
+    }
+    return hist;
 }
 }
 

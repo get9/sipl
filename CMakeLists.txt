@@ -33,4 +33,4 @@ set(SIPL_SOURCES
     src/io/PpmIO.cpp
 )
 
-add_executable(sipldemo test.cpp "${SIPL_SOURCES}")
+add_executable(sipldemo histogram.cpp "${SIPL_SOURCES}")
