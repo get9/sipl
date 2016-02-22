@@ -126,12 +126,12 @@ void PgmIO::write_ascii(const MatrixX<uint8_t>& mat,
 
     // Write magic number and matrix header info
     stream << "P2" << std::endl
-           << mat.cols << " " << mat.rows << std::endl
+           << mat.dims[1] << " " << mat.dims[0] << std::endl
            << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
 
     // Write mat data
-    for (int32_t i = 0; i < mat.rows; ++i) {
-        for (int32_t j = 0; j < mat.cols; ++j) {
+    for (int32_t i = 0; i < mat.dims[0]; ++i) {
+        for (int32_t j = 0; j < mat.dims[1]; ++j) {
             stream << std::to_string(mat(i, j)) << " ";
         }
         stream << std::endl;

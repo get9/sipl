@@ -143,7 +143,7 @@ void PpmIO::write_ascii(const MatrixX<RgbPixel>& mat,
 
     // Write magic number and matrix header info
     stream << "P3" << std::endl
-           << mat.cols << " " << mat.rows << std::endl
+           << mat.dims[1] << " " << mat.dims[0] << std::endl
            << std::to_string(std::numeric_limits<uint8_t>::max()) << std::endl;
 
     // Write mat data
