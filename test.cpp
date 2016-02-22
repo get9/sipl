@@ -50,16 +50,22 @@ int main(int argc, char** argv)
     // Perform projective transform
     case ActionType::TRANSFORM: {
         auto transform = parse_transform(g_transform_file);
+
+        // PGM file
         if (g_infile.rfind(".pgm") != std::string::npos) {
-            auto mat = PgmIO::read(g_infile);
+            auto img = PgmIO::read(g_infile);
             auto transformed_mat = projective_transform<uint8_t, double>(
-                mat, transform, g_interpolate_type);
+                img, transform, g_interpolate_type);
             PgmIO::write(transformed_mat, g_outfile);
+
+            // PPM file
         } else if (g_infile.rfind(".ppm") != std::string::npos) {
-            auto mat = PpmIO::read(g_infile);
-            auto transformed_mat = projective_transform<Vector3b, Vector3d>(
-                mat, transform, g_interpolate_type);
+            auto img = PpmIO::read(g_infile);
+            auto transformed_mat = projective_transform<RgbPixel, Vector3d>(
+                img, transform, g_interpolate_type);
             PpmIO::write(transformed_mat, g_outfile);
+
+            // Unknown
         } else {
             std::cerr << "[error]: unknown file type" << std::endl;
             std::exit(1);
