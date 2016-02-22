@@ -57,7 +57,6 @@ public:
         for (int32_t i = 0; i < other.size(); ++i) {
             data_[i] = other[i];
         }
-        return *this;
     }
 
     // Const accessor
@@ -115,7 +114,7 @@ public:
     {
         Matrix<CastType, Rows, Cols> new_mat;
         for (int32_t i = 0; i < nelements_; ++i) {
-            new_mat[i] = CastType((*this)[i]);
+            new_mat[i] = CastType(data_[i]);
         }
         return new_mat;
     }
