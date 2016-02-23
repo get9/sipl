@@ -49,6 +49,9 @@ public:
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
+
+        other.nelements_ = 0;
+        other.nbytes_ = 0;
     }
 
     // Copy constructor
@@ -197,10 +200,13 @@ public:
     // Move constructor
     Matrix(Matrix&& other)
         : dims(std::move(other.dims))
-        , nelements_(other.dims[0] * other.dims[1])
+        , nelements_(dims[0] * dims[1])
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
+        other.nelements_ = 0;
+        other.nbytes_ = 0;
+        other.data_ = nullptr;
     }
 
     // Copy constructor
@@ -245,13 +251,24 @@ public:
 
     Dtype max(void) const
     {
-        Dtype max = std::numeric_limits<Dtype>::min();
-        for (int32_t i = 0; i < nelements_; ++i) {
+        Dtype max = data_[0];
+        for (int32_t i = 1; i < nelements_; ++i) {
             if (data_[i] > max) {
                 max = data_[i];
             }
         }
         return max;
+    }
+
+    int32_t max_element(void) const
+    {
+        int32_t max_idx = 0;
+        for (int32_t i = 1; i < nelements_; ++i) {
+            if (data_[i] > data_[max_idx]) {
+                max_idx = i;
+            }
+        }
+        return max_idx;
     }
 
     Dtype min(void) const
@@ -265,6 +282,17 @@ public:
         return max;
     }
 
+    int32_t min_element(void) const
+    {
+        int32_t min_idx = 0;
+        for (int32_t i = 1; i < nelements_; ++i) {
+            if (data_[i] < data_[min_idx]) {
+                min_idx = i;
+            }
+        }
+        return min_idx;
+    }
+
 private:
     int32_t nelements_;
     int32_t nbytes_;
@@ -275,11 +303,12 @@ private:
 // Dynamically-allocated vector
 template <typename Dtype>
 using VectorX = Vector<Dtype, Dynamic>;
+using VectorXd = VectorX<double>;
 
 template <typename T>
 VectorX<double> operator/(const VectorX<T>& v, const double s)
 {
-    VectorX<double> new_v(v.size());
+    VectorXd new_v(v.size());
     for (int32_t i = 0; i < v.size(); ++i) {
         new_v[i] = v[i] / s;
     }
