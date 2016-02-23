@@ -17,6 +17,8 @@ class Matrix<Dtype, Dynamic, Dynamic>
 public:
     const std::array<int32_t, 2> dims;
 
+    using value_type = Dtype;
+
     // Default constructor, no data
     Matrix(const int32_t rs, const int32_t cs)
         : dims({rs, cs})
@@ -90,6 +92,33 @@ public:
     int32_t size(void) const { return nelements_; }
 
     int32_t size_in_bytes(void) const { return nbytes_; }
+
+    // Copy-assign
+    Matrix& operator=(const Matrix& other)
+    {
+        if (this != &other) {
+            nbytes_ = other.nbytes_;
+            data_.release();
+            data_ = std::unique_ptr<Dtype[]>(new Dtype[nelements_]);
+            for (int32_t i = 0; i < other.nelements_; ++i) {
+                data_[i] = other.data_[i];
+            }
+        }
+        return *this;
+    }
+
+    // Move-assign
+    Matrix& operator=(Matrix&& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            nbytes_ = other.nbytes_;
+            data_ = std::move(other.data_);
+            other.nelements_ = 0;
+            other.nbytes_ = 0;
+        }
+        return *this;
+    }
 
 private:
     int32_t nelements_;
