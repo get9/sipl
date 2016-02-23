@@ -14,6 +14,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(-Wno-weak-vtables)
     add_compile_options(-Wno-padded)
     add_compile_options(-Wno-sign-conversion)
+    add_compile_options(-Wno-c++11-narrowing)
     add_compile_options(-Werror)
 endif()
 
