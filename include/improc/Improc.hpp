@@ -39,14 +39,11 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
                                           const InterpolateType interpolator)
 {
     // 1. Figure out sizes of new matrix
-    auto c0 = homogenize(transform * Vector3d{0 - 0.5, 0 - 0.5, 1});
-    auto c1 = homogenize(transform *
-                         Vector3d{0 - 0.5, double(image.dims[0]) - 0.5, 1});
-    auto c2 = homogenize(transform *
-                         Vector3d{double(image.dims[1]) - 0.5, 0 - 0.5, 1});
-    auto c3 = homogenize(transform * Vector3d{double(image.dims[1]) - 0.5,
-                                              double(image.dims[0]) - 0.5,
-                                              1});
+    auto c0 = homogenize(transform * Vector3d{0, 0, 1});
+    auto c1 = homogenize(transform * Vector3d{0, image.dims[0], 1});
+    auto c2 = homogenize(transform * Vector3d{image.dims[1], 0, 1});
+    auto c3 = homogenize(transform * Vector3d{image.dims[1], image.dims[0], 1});
+
     // Raise or lower values as needed
     for (int32_t i = 0; i < 3; ++i) {
         c0[i] = std::round(c0[i]);
@@ -73,26 +70,26 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
     // Start filling it
     for (int32_t i = 0; i < new_image.dims[0]; ++i) {
         for (int32_t j = 0; j < new_image.dims[1]; ++j) {
-            Vector3d uv{double(j + xmin), double(i + ymin), double(1)};
+            Vector3d uv{j + xmin, i + ymin, 1};
             Vector3d xy = homogenize(inverse * uv);
             const double x = xy[0];
             const double y = xy[1];
 
             // Skip any points outside image space
-            if (x < 0 || x >= image.dims[1] || y < 0 || y >= image.dims[0]) {
+            if (x < 0 || int32_t(x) >= image.dims[1] || y < 0 ||
+                int32_t(y) >= image.dims[0]) {
                 new_image(i, j) = ElementType(0);
                 continue;
             }
 
             // Need to interpolate
             switch (interpolator) {
-            case InterpolateType::NEAREST_NEIGHBOR: {
+            case InterpolateType::NEAREST_NEIGHBOR:
                 new_image(i, j) =
                     NearestNeighborInterpolator::interpolate<ElementType,
                                                              InternalType>(
                         image, x, y);
                 break;
-            }
             case InterpolateType::BILINEAR:
                 new_image(i, j) =
                     BilinearInterpolator::interpolate<ElementType,
@@ -117,6 +114,21 @@ MatrixX<uint8_t> color_to_grayscale(const MatrixX<RgbPixel>& color)
     }
 
     return grayscale;
+}
+
+// XXX only works for integral-typed matrices for now, need to figure out how to
+// get it to work for Vector-type matrices
+template <typename Dtype>
+MatrixX<Dtype> rotate_image(
+    const MatrixX<Dtype>& in_mat,
+    const double degrees,
+    const InterpolateType type = InterpolateType::BILINEAR)
+{
+    const double rads = degrees * M_PI / 180;
+    Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
+                              {-std::sin(rads), std::cos(rads), 0},
+                              {0, 0, 1}};
+    return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);
 }
 
 template <typename Dtype>
