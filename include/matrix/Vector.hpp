@@ -6,22 +6,21 @@
 #include <iostream>
 #include <string>
 #include <cassert>
-#include "matrix/MatrixBase.hpp"
 
 namespace sipl
 {
 
 // Partial specialization for static Vector type
 template <typename Dtype, int32_t Length>
-class Matrix<Dtype, Length, 1>
+class Vector
 {
 public:
-    std::array<int32_t, Length> dims;
+    const std::array<int32_t, 1> dims;
 
-    Matrix() : dims({Length, 1}), nelements_(Length), data_() {}
+    Vector() : dims({Length}), nelements_(Length), data_() {}
 
-    Matrix(std::initializer_list<Dtype> list)
-        : dims({Length, 1})
+    Vector(std::initializer_list<Dtype> list)
+        : dims({Length})
         , nelements_(Length)
         , nbytes_(int32_t(sizeof(Dtype)) * nelements_)
     {
@@ -34,8 +33,8 @@ public:
     }
 
     // Fill vector with single scalar (useful for 0, etc)
-    Matrix(const Dtype scalar)
-        : dims({Length, 1})
+    Vector(const Dtype scalar)
+        : dims({Length})
         , nelements_(Length)
         , nbytes_(int32_t(sizeof(Dtype)) * nelements_)
     {
@@ -43,19 +42,18 @@ public:
     }
 
     // Move constructor
-    Matrix(Matrix&& other)
+    Vector(Vector&& other)
         : dims(std::move(other.dims))
-        , nelements_(other.dims[0] * other.dims[1])
+        , nelements_(other.dims[0])
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
-
         other.nelements_ = 0;
         other.nbytes_ = 0;
     }
 
     // Copy constructor
-    Matrix(const Matrix& other)
+    Vector(const Vector& other)
         : dims(other.dims), nelements_(other.nelements_), nbytes_(other.nbytes_)
     {
         for (int32_t i = 0; i < other.size(); ++i) {
@@ -113,7 +111,7 @@ public:
     }
 
     template <typename T>
-    Matrix& operator/=(const T scalar)
+    Vector& operator/=(const T scalar)
     {
         assert(scalar != 0 && "divide by zero error");
         for (auto&& d : data_) {
@@ -123,9 +121,10 @@ public:
     }
 
     // Copy-assign
-    Matrix& operator=(const Matrix& other)
+    Vector& operator=(const Vector& other)
     {
         if (this != &other) {
+            dims = other.dims;
             nelements_ = other.nelements_;
             nbytes_ = other.nbytes_;
             data_.release();
@@ -137,9 +136,11 @@ public:
         return *this;
     }
 
-    Matrix& operator=(Matrix&& other)
+    Vector& operator=(Vector&& other)
     {
         if (this != &other) {
+            dims = std::move(other.dims);
+            other.dims = {0};
             nelements_ = other.nelements_;
             other.nelements_ = 0;
             nbytes_ = other.nbytes_;
@@ -154,10 +155,6 @@ private:
     int32_t nbytes_;
     std::array<Dtype, Length> data_;
 };
-
-// Statically allocated Vector
-template <typename Dtype, int32_t Length>
-using Vector = Matrix<Dtype, Length, 1>;
 
 template <typename T, int32_t Length>
 Vector<double, Length> operator/(const Vector<T, Length>& v, const double s)
@@ -200,15 +197,15 @@ using RgbPixel = Vector3b;
 
 // Partial specialization for dynamic Vector type
 template <typename Dtype>
-class Matrix<Dtype, Dynamic, 1>
+class Vector<Dtype, Dynamic>
 {
 public:
-    const std::array<int32_t, 2> dims;
+    const std::array<int32_t, 1> dims;
 
-    Matrix() : dims({0, 0}), nelements_(0), data_(nullptr) {}
+    Vector() : dims({0}), nelements_(0), data_(nullptr) {}
 
-    Matrix(const int32_t length)
-        : dims({length, 1})
+    Vector(const int32_t length)
+        : dims({length})
         , nelements_(int32_t(length))
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]()))
@@ -216,9 +213,9 @@ public:
     }
 
     // Move constructor
-    Matrix(Matrix&& other)
+    Vector(Vector&& other)
         : dims(std::move(other.dims))
-        , nelements_(dims[0] * dims[1])
+        , nelements_(dims[0])
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
@@ -228,7 +225,7 @@ public:
     }
 
     // Copy constructor
-    Matrix(const Matrix& other)
+    Vector(const Vector& other)
         : dims(other.dims), nelements_(other.nelements_), nbytes_(other.nbytes_)
     {
         for (int32_t i = 0; i < other.size(); ++i) {
@@ -243,7 +240,7 @@ public:
     Dtype& operator()(const int32_t i) { return data_[i]; }
 
     // Access elements by single index
-    const Dtype& operator[](int32_t index) const { return data_[index]; }
+    const Dtype& operator[](const int32_t index) const { return data_[index]; }
 
     Dtype& operator[](int32_t index) { return data_[index]; }
 
@@ -297,7 +294,7 @@ public:
                 min = data_[i];
             }
         }
-        return max;
+        return min;
     }
 
     int32_t min_element(void) const
@@ -312,9 +309,10 @@ public:
     }
 
     // Copy-assign
-    Matrix& operator=(const Matrix& other)
+    Vector& operator=(const Vector& other)
     {
         if (this != &other) {
+            dims = other.dims;
             nelements_ = other.nelements_;
             nbytes_ = other.nbytes_;
             data_.release();
@@ -326,9 +324,10 @@ public:
         return *this;
     }
 
-    Matrix& operator=(Matrix&& other)
+    Vector& operator=(Vector&& other)
     {
         if (this != &other) {
+            dims = other.dims;
             nelements_ = other.nelements_;
             other.nelements_ = 0;
             nbytes_ = other.nbytes_;
@@ -350,24 +349,43 @@ template <typename Dtype>
 using VectorX = Vector<Dtype, Dynamic>;
 using VectorXd = VectorX<double>;
 
+template <typename T, int32_t Length>
+std::ostream& operator<<(std::ostream& s, const Vector<T, Length>& v)
+{
+    if (v.size() == 0) {
+        return s << "[]";
+    }
+    s << "[";
+    for (int32_t i = 0; i < v.size() - 1; ++i) {
+        s << std::to_string(v[i]) << ", ";
+    }
+    return s << std::to_string(v[v.size() - 1]) << "]";
+}
+
+template <typename T, typename Scalar>
+VectorX<T> operator*(const VectorX<T>& v, const Scalar s)
+{
+    VectorX<T> new_v(v.size());
+    for (int32_t i = 0; i < v.size(); ++i) {
+        new_v[i] = v[i] * s;
+    }
+    return new_v;
+}
+
+template <typename T, typename Scalar>
+VectorX<T> operator*(const Scalar s, const VectorX<T> v)
+{
+    return v * s;
+}
+
 template <typename T>
-VectorX<double> operator/(const VectorX<T>& v, const double s)
+VectorXd operator/(const VectorX<T>& v, const double s)
 {
     VectorXd new_v(v.size());
     for (int32_t i = 0; i < v.size(); ++i) {
         new_v[i] = v[i] / s;
     }
     return new_v;
-}
-
-template <typename T, int32_t N>
-std::ostream& operator<<(std::ostream& s, const Vector<T, N>& v)
-{
-    s << "[";
-    for (int32_t i = 0; i < v.size() - 1; ++i) {
-        s << std::to_string(v[i]) << ", ";
-    }
-    return s << std::to_string(v[v.size() - 1]) << "]";
 }
 }
 
