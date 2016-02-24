@@ -44,7 +44,6 @@ struct BilinearInterpolator {
         InternalType f = ((row1 - y) / (row1 - row0)) * tmp_i1 +
                          ((y - row0) / (row1 - row0)) * tmp_i2;
 
-        std::cout << f << std::endl;
         return clamp(f);
     }
 };
