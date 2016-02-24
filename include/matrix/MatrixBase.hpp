@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cassert>
 #include "Constants.hpp"
+#include "matrix/Vector.hpp"
 
 namespace sipl
 {
@@ -226,6 +227,21 @@ Matrix<Scalar, Rows, Cols> operator*(const Matrix<T, Rows, Cols> m,
     return s * m;
 }
 
+template <typename T, typename U, int32_t Rows, int32_t Cols>
+Vector<U, Rows> operator*(const Matrix<T, Rows, Cols>& m,
+                          const Vector<U, Cols>& v)
+{
+    Vector<U, Rows> new_v;
+    for (int32_t i = 0; i < m.dims[0]; ++i) {
+        U sum = 0;
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
+            sum += m(i, j) * v(j);
+        }
+        new_v[i] = sum;
+    }
+    return new_v;
+}
+
 // Aliases for sized matrices
 template <typename Dtype>
 using Matrix33 = Matrix<Dtype, 3, 3>;
@@ -236,14 +252,14 @@ using Matrix33i = Matrix33<int32_t>;
 template <typename T, int32_t Rows, int32_t Cols>
 std::ostream& operator<<(std::ostream& s, const Matrix<T, Rows, Cols>& m)
 {
-    for (int32_t i = 0; i < Rows - 1; ++i) {
-        for (int32_t j = 0; j < Cols; ++j) {
+    for (int32_t i = 0; i < m.dims[0] - 1; ++i) {
+        for (int32_t j = 0; j < m.dims[1]; ++j) {
             s << m(i, j) << " ";
         }
         s << std::endl;
     }
-    for (int32_t j = 0; j < Cols; ++j) {
-        s << m(Rows - 1, j) << " ";
+    for (int32_t j = 0; j < m.dims[1]; ++j) {
+        s << m(m.dims[0] - 1, j) << " ";
     }
     return s;
 }
