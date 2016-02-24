@@ -113,7 +113,7 @@ public:
     }
 
     template <typename T>
-    Matrix<Dtype, Length, 1>& operator/=(const T scalar)
+    Matrix& operator/=(const T scalar)
     {
         assert(scalar != 0 && "divide by zero error");
         for (auto&& d : data_) {
@@ -122,11 +122,29 @@ public:
         return *this;
     }
 
-    template <typename T>
-    Matrix<Dtype, Length, 1>& operator=(Matrix<T, Length, 1> v)
+    // Copy-assign
+    Matrix& operator=(const Matrix& other)
     {
-        for (int32_t i = 0; i < Length; ++i) {
-            data_[i] = Dtype(v[i]);
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            nbytes_ = other.nbytes_;
+            data_.release();
+            data_ = std::unique_ptr<Dtype[]>(new Dtype[nelements_]);
+            for (int32_t i = 0; i < other.nelements_; ++i) {
+                data_[i] = other.data_[i];
+            }
+        }
+        return *this;
+    }
+
+    Matrix& operator=(Matrix&& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            other.nelements_ = 0;
+            nbytes_ = other.nbytes_;
+            other.nbytes_ = 0;
+            data_ = std::move(other.data_);
         }
         return *this;
     }
@@ -291,6 +309,33 @@ public:
             }
         }
         return min_idx;
+    }
+
+    // Copy-assign
+    Matrix& operator=(const Matrix& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            nbytes_ = other.nbytes_;
+            data_.release();
+            data_ = std::unique_ptr<Dtype[]>(new Dtype[nelements_]);
+            for (int32_t i = 0; i < other.nelements_; ++i) {
+                data_[i] = other.data_[i];
+            }
+        }
+        return *this;
+    }
+
+    Matrix& operator=(Matrix&& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            other.nelements_ = 0;
+            nbytes_ = other.nbytes_;
+            other.nbytes_ = 0;
+            data_ = std::move(other.data_);
+        }
+        return *this;
     }
 
 private:
