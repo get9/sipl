@@ -130,17 +130,6 @@ MatrixX<Dtype> rotate_image(
                               {0, 0, 1}};
     return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);
 }
-
-template <typename Dtype>
-VectorX<uint32_t> histogram(const MatrixX<Dtype>& mat)
-{
-    const auto max = std::numeric_limits<Dtype>::max();
-    VectorX<uint32_t> hist(max);
-    for (int32_t i = 0; i < mat.size(); ++i) {
-        hist[mat[i]]++;
-    }
-    return hist;
-}
 }
 
 #endif
