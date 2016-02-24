@@ -132,10 +132,10 @@ MatrixX<Dtype> rotate_image(
 }
 
 template <typename Dtype>
-VectorX<int32_t> histogram(const MatrixX<Dtype>& mat)
+VectorX<uint32_t> histogram(const MatrixX<Dtype>& mat)
 {
     const auto max = std::numeric_limits<Dtype>::max();
-    VectorX<int32_t> hist(max);
+    VectorX<uint32_t> hist(max);
     for (int32_t i = 0; i < mat.size(); ++i) {
         hist[mat[i]]++;
     }
