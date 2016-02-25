@@ -4,8 +4,12 @@
 #define SIPL_MATRIX_VECTOR_H
 
 #include <iostream>
+#include <algorithm>
+#include <memory>
+#include <array>
 #include <string>
 #include <cassert>
+#include "Constants.hpp"
 
 namespace sipl
 {

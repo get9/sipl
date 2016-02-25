@@ -1,4 +1,7 @@
 #include <iostream>
+#include <cstring>
+#include <fstream>
+#include <cmath>
 #include "io/PgmIO.hpp"
 #include "matrix/Matrix.hpp"
 #include "improc/Improc.hpp"

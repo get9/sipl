@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include "io/PgmIO.hpp"
 #include "improc/Histogram.hpp"
 
