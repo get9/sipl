@@ -130,6 +130,62 @@ MatrixX<Dtype> rotate_image(
                               {0, 0, 1}};
     return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);
 }
+
+// Convolution with arbitrary kernel
+// XXX Only works with gray-valued images at this time
+template <typename Dtype>
+MatrixX<Dtype> convolve(const MatrixX<Dtype>& img, const MatrixXd& kernel)
+{
+    assert(kernel.dims[0] % 2 == 1 && kernel.dims[1] % 2 == 1 &&
+           "kernel must have odd # rows and cols");
+
+    MatrixX<Dtype> conv_out(img.dims);
+    for (int32_t i = 0; i < img.dims[0]; ++i) {
+        for (int32_t j = 0; j < img.dims[1]; ++j) {
+            const auto patch =
+                img.patch(i, j, kernel.dims[0] / 2, kernel.dims[1] / 2);
+
+            // Do the multiplication of patch and kernel in the correct order
+            double sum = 0;
+            for (int32_t m_row = 0; m_row < kernel.dims[0]; ++m_row) {
+                const auto k_row = kernel.dims[0] - 1 - m_row;
+                for (int32_t m_col = 0; m_col < kernel.dims[0]; ++m_col) {
+                    const auto k_col = kernel.dims[1] - 1 - m_col;
+                    sum += kernel(k_row, k_col) * patch(m_row, m_col);
+                }
+            }
+
+            // Assign to new matrix position
+            conv_out(i, j) = clamp(sum);
+        }
+    }
+
+    return conv_out;
+}
+
+template <typename Dtype>
+MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
+                                    const int32_t height,
+                                    const int32_t width,
+                                    const int32_t k)
+{
+    assert(width % 2 == 1 && height % 2 == 1 && "width and height must be odd");
+    assert(k >= 0 && k < width * height && "k out of bounds");
+
+    // For every pixel in the image, get a patch of size height x width around
+    // it, sort it, then take the kth element and make that the element we use
+    // for the output matrix
+    MatrixX<Dtype> result(img.dims);
+    for (int32_t i = 0; i < img.dims[0]; ++i) {
+        for (int32_t j = 0; j < img.dims[1]; ++j) {
+            auto patch = img.patch(i, j, height / 2, width / 2);
+            std::sort(patch.buffer(), patch.buffer() + patch.size());
+            result(i, j) = patch[k];
+        }
+    }
+
+    return result;
+}
 }
 
 #endif
