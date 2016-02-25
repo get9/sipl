@@ -4,6 +4,7 @@
 #define SIPL_IMPROC_HISTOGRAM_HPP
 
 #include <limits>
+#include <cstdlib>
 #include "matrix/Vector.hpp"
 #include "improc/Improc.hpp"
 
@@ -93,6 +94,43 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
 
     // Rotate +90 degrees to orient it correctly
     return rotate_image(hist_plot, 90);
+}
+
+// Histogram match - return a new matrix (doesn't modify old image)
+template <typename Dtype>
+MatrixX<Dtype> histogram_match(const MatrixX<Dtype>& target,
+                               const MatrixX<Dtype>& source)
+{
+    // Calculate CDF for both images
+    const auto target_cdf = histogram_cdf(target);
+    const auto source_cdf = histogram_cdf(source);
+
+    // Build lookup table for matching histograms
+    // Note: due to grading requirements of picking the lowest intensity gray
+    // level for instances of multimapped values from source CDF to target CDF,
+    // iterate backwards so we pick the earlier gray level and use <= min_diff
+    constexpr auto max = std::numeric_limits<Dtype>::max();
+    VectorX<Dtype> lut(max);
+    for (int32_t j = 0; j < lut.size(); ++j) {
+        int32_t min_diff = std::numeric_limits<int32_t>::max();
+        for (int32_t i = target_cdf.size() - 1; i >= 0; --i) {
+            const auto res = std::abs(int32_t(target_cdf[i] - source_cdf[j]));
+            if (res <= min_diff) {
+                min_diff = res;
+                lut[j] = i;
+            }
+        }
+    }
+
+    // Alter the histogram of the source image to match target image via the LUT
+    MatrixX<Dtype> modified_source(source.dims);
+    for (int32_t i = 0; i < source.dims[0]; ++i) {
+        for (int32_t j = 0; j < source.dims[1]; ++j) {
+            modified_source(i, j) = lut[source(i, j)];
+        }
+    }
+
+    return modified_source;
 }
 }
 
