@@ -35,4 +35,5 @@ set(SIPL_SOURCES
     src/io/PpmIO.cpp
 )
 
-add_executable(sipldemo histogram.cpp "${SIPL_SOURCES}")
+add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
+add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
