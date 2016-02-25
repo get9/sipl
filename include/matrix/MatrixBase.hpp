@@ -242,6 +242,12 @@ Vector<U, Rows> operator*(const Matrix<T, Rows, Cols>& m,
     return new_v;
 }
 
+template <typename Dtype>
+std::string as_string(const Dtype d)
+{
+    return std::to_string(d);
+}
+
 // Aliases for sized matrices
 template <typename Dtype>
 using Matrix33 = Matrix<Dtype, 3, 3>;
@@ -254,12 +260,12 @@ std::ostream& operator<<(std::ostream& s, const Matrix<T, Rows, Cols>& m)
 {
     for (int32_t i = 0; i < m.dims[0] - 1; ++i) {
         for (int32_t j = 0; j < m.dims[1]; ++j) {
-            s << m(i, j) << " ";
+            s << as_string(m(i, j)) << " ";
         }
         s << std::endl;
     }
     for (int32_t j = 0; j < m.dims[1]; ++j) {
-        s << m(m.dims[0] - 1, j) << " ";
+        s << as_string(m(m.dims[0] - 1, j)) << " ";
     }
     return s;
 }

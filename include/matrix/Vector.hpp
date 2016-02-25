@@ -264,6 +264,8 @@ public:
 
     int32_t size_in_bytes(void) const { return nbytes_; }
 
+    bool empty(void) const { return nelements_ == 0; }
+
     Dtype max(void) const
     {
         Dtype max = data_[0];
@@ -342,6 +344,20 @@ private:
     int32_t nbytes_;
     std::unique_ptr<Dtype[]> data_;
 };
+
+template <typename Dtype, int32_t Length>
+std::string as_string(const Vector<Dtype, Length>& v)
+{
+    if (v.empty()) {
+        return "[]";
+    }
+    std::string res = "[";
+    for (int32_t i = 1; i < v.size() - 1; ++i) {
+        res += std::to_string(v[i]) + ", ";
+    }
+    res += v[v.size() - 1] + "]";
+    return res;
+}
 
 // Aliases
 // Dynamically-allocated vector

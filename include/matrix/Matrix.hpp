@@ -93,6 +93,30 @@ public:
 
     int32_t size_in_bytes(void) const { return nbytes_; }
 
+    Matrix& operator/=(const double s)
+    {
+        assert((s - 1e-10) != 0 && "precision issues");
+
+        Matrix<double, Dynamic, Dynamic> res(dims);
+        for (int32_t i = 0; i < dims[0]; ++i) {
+            for (int32_t j = 0; j < dims[1]; ++j) {
+                res(i, j) = (*this)(i, j) / s;
+            }
+        }
+        data_ = std::move(res.data_);
+        nbytes_ = nelements_ * sizeof(double);
+        return *this;
+    }
+
+    uint32_t abssum(void) const
+    {
+        uint32_t sum = 0;
+        for (int32_t i = 0; i < nelements_; ++i) {
+            sum += std::abs(int32_t((*this)[i]));
+        }
+        return sum;
+    }
+
     // Copy-assign
     Matrix& operator=(const Matrix& other)
     {
@@ -120,15 +144,71 @@ public:
         return *this;
     }
 
+    // Different border types will do different things when extracting patches
+    // from a matrix.
+    //
+    //     * REPLICATE: basically clamps the out-of-bounds indices and uses the
+    //       nearest one
+    enum class BorderType { REPLICATE };
+
+    // Extract a patch centered at (center_y, center_x) with radius ry and
+    // rx. Change boundaries depending on BorderType
+    Matrix patch(const int32_t center_y,
+                 const int32_t center_x,
+                 const int32_t ry,
+                 const int32_t rx,
+                 const BorderType border_type = BorderType::REPLICATE) const
+    {
+        assert(center_y >= 0 && center_y < dims[0] && "center_y out of bounds");
+        assert(center_x >= 0 && center_x < dims[1] && "center_x out of bounds");
+
+        Matrix<Dtype, Dynamic, Dynamic> patch(2 * ry + 1, 2 * rx + 1);
+        for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
+            for (int32_t x = center_x - rx, c = 0; x <= center_x + rx;
+                 ++x, ++c) {
+                switch (border_type) {
+                case BorderType::REPLICATE:
+                    patch(r, c) =
+                        (*this)(clamp_row_index(y), clamp_col_index(x));
+                }
+            }
+        }
+
+        return patch;
+    }
+
 private:
     int32_t nelements_;
     int32_t nbytes_;
     std::unique_ptr<Dtype[]> data_;
+
+    // Helper functions to clamp a row/col index to in-bounds
+    const std::function<int32_t(int32_t)> clamp_row_index = [this](
+        int32_t index) {
+        if (index < 0) {
+            return 0;
+        } else if (index >= dims[0]) {
+            return dims[0] - 1;
+        } else {
+            return index;
+        }
+    };
+    const std::function<int32_t(int32_t)> clamp_col_index = [this](
+        int32_t index) {
+        if (index < 0) {
+            return 0;
+        } else if (index >= dims[1]) {
+            return dims[1] - 1;
+        } else {
+            return index;
+        }
+    };
 };
 
 // Dynamically-allocated matrix
 template <typename Dtype>
 using MatrixX = Matrix<Dtype, Dynamic, Dynamic>;
+using MatrixXd = MatrixX<double>;
 
 // Matrix mul for dynamically-defined matrices
 template <typename Dtype, int32_t R1, int32_t C2>
