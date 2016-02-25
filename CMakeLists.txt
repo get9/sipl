@@ -4,6 +4,8 @@ project(SIPL)
 # Let's use C++14
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
+
 # Set CXX_FLAGS so ninja output is colorized
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(-Wall)
@@ -33,7 +35,9 @@ set(SIPL_SOURCES
     src/io/NetpbmIOBase.cpp
     src/io/PgmIO.cpp
     src/io/PpmIO.cpp
+    src/io/BmpIO.cpp
 )
 
 add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
 add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
+add_executable(io_test bmp_test.cpp "${SIPL_SOURCES}")

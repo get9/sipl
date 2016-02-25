@@ -4,6 +4,7 @@
 #define SIPL_IO_PPMIO_H
 
 #include "cassert"
+#include "io/IOBase.hpp"
 #include "io/NetpbmIOBase.hpp"
 #include "matrix/Matrix.hpp"
 #include "matrix/Vector.hpp"

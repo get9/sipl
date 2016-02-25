@@ -7,6 +7,7 @@
 #include <fstream>
 #include <tuple>
 #include <sstream>
+#include "io/IOBase.hpp"
 #include "matrix/Matrix.hpp"
 
 namespace sipl
@@ -26,7 +27,7 @@ protected:
     std::string msg_;
 };
 
-class NetpbmIOBase
+class NetpbmIOBase : public IOBase
 {
 public:
     enum class FileType { BINARY, ASCII, UNKNOWN };
