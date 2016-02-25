@@ -24,7 +24,7 @@ MatrixX<uint8_t> BmpIO::read(const std::string& filename)
     // std::cout << "file length: " << file_length << std::endl;
 
     // Read into buffer
-    std::unique_ptr<char[]> buf(new char[file_length]);
+    std::unique_ptr<char[]> buf(new char[size_t(file_length)]);
     stream.read(reinterpret_cast<char*>(buf.get()), file_length);
 
     // Fill BMPFILEHEADER and BMPINFOHEADER structs
@@ -60,6 +60,7 @@ MatrixX<uint8_t> BmpIO::read(const std::string& filename)
             img.bytes() + (img.dims[0] - 1 - i) * img.dims[1];
         std::copy(row_start, row_end, mat_start);
     }
+	std::cout << img(0, 0) << std::endl;
 
     return img;
 }
