@@ -1,11 +1,11 @@
 #pragma once
 
-// In order to get valid data from the BMP file, need to pack to nearest 2-byte
-// boundary, not 4
-#pragma pack(2)
-
 #ifndef SIPL_IO_BMPIO_H
 #define SIPL_IO_BMPIO_H
+
+// In order to get valid data from the BMP file, need to pack to nearest 2-byte
+// boundary, not 4
+#pragma pack(push, 2)
 
 #include "matrix/Matrix.hpp"
 #include "io/IOBase.hpp"
@@ -57,5 +57,8 @@ public:
     static void write(const MatrixX<uint8_t>& mat, const std::string& filename);
 };
 }
+
+// Set alignment back to normal
+#pragma pack(pop)
 
 #endif
