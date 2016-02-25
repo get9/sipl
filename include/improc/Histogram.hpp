@@ -29,7 +29,7 @@ VectorX<uint32_t> histogram_cdf(const MatrixX<Dtype>& mat)
 {
     const auto hist = histogram(mat);
 
-    double sum = 0;
+    uint32_t sum = 0;
     VectorX<uint32_t> cdf_hist(hist.size());
     for (int32_t i = 0; i < cdf_hist.size(); ++i) {
         sum += hist[i];
@@ -59,9 +59,9 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
         if (cdf_hist[i] == 0) {
             equalized_hist[i] = 0;
         } else {
-            equalized_hist[i] = std::round(
+            equalized_hist[i] = uint32_t(std::round(
                 ((cdf_hist[i] - cdf_min) / (double(mat.size()) - cdf_min)) *
-                max);
+                max));
         }
     }
 

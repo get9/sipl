@@ -4,6 +4,8 @@
 #define SIPL_IMPROC_IMPROC_H
 
 #include <limits>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "matrix/Vector.hpp"
 #include "matrix/Matrix.hpp"
 #include "improc/NearestNeighborInterpolator.hpp"
@@ -40,9 +42,9 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
 {
     // 1. Figure out sizes of new matrix
     auto c0 = homogenize(transform * Vector3d{0, 0, 1});
-    auto c1 = homogenize(transform * Vector3d{0, image.dims[0], 1});
-    auto c2 = homogenize(transform * Vector3d{image.dims[1], 0, 1});
-    auto c3 = homogenize(transform * Vector3d{image.dims[1], image.dims[0], 1});
+    auto c1 = homogenize(transform * Vector3d{0, double(image.dims[0]), 1});
+    auto c2 = homogenize(transform * Vector3d{double(image.dims[1]), 0, 1});
+    auto c3 = homogenize(transform * Vector3d{double(image.dims[1]), double(image.dims[0]), 1});
 
     // Raise or lower values as needed
     for (int32_t i = 0; i < 3; ++i) {
@@ -70,7 +72,7 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
     // Start filling it
     for (int32_t i = 0; i < new_image.dims[0]; ++i) {
         for (int32_t j = 0; j < new_image.dims[1]; ++j) {
-            Vector3d uv{j + xmin, i + ymin, 1};
+            Vector3d uv{double(j + xmin), double(i + ymin), 1};
             Vector3d xy = homogenize(inverse * uv);
             const double x = xy[0];
             const double y = xy[1];
@@ -124,8 +126,7 @@ MatrixX<Dtype> rotate_image(
     const double degrees,
     const InterpolateType type = InterpolateType::BILINEAR)
 {
-    const double rads = degrees * M_PI / 180;
-    Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
+const double rads = degrees * M_PI / 180;	  Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
     return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);
