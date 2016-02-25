@@ -4,6 +4,7 @@
 #define SIPL_MATRIX_H
 
 #include <memory>
+#include <functional>
 #include "matrix/MatrixBase.hpp"
 #include "matrix/Vector.hpp"
 
@@ -183,8 +184,7 @@ private:
     std::unique_ptr<Dtype[]> data_;
 
     // Helper functions to clamp a row/col index to in-bounds
-    const std::function<int32_t(int32_t)> clamp_row_index = [this](
-        int32_t index) {
+    int32_t clamp_row_index(const int32_t index) const {
         if (index < 0) {
             return 0;
         } else if (index >= dims[0]) {
@@ -192,9 +192,8 @@ private:
         } else {
             return index;
         }
-    };
-    const std::function<int32_t(int32_t)> clamp_col_index = [this](
-        int32_t index) {
+    }
+	int32_t clamp_col_index(const int32_t index) const {
         if (index < 0) {
             return 0;
         } else if (index >= dims[1]) {
@@ -202,7 +201,7 @@ private:
         } else {
             return index;
         }
-    };
+    }
 };
 
 // Dynamically-allocated matrix
