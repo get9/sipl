@@ -30,34 +30,53 @@ Code Layout
 There are a few modules in the source:
 
 * io
-    - Handles all I/O functionality (PPM/PGM)
+    - Handles all I/O functionality (PPM/PGM/BMP)
 * matrix
     - Handles matrix math
     - Different types like Vectors, fixed-sized and dynamic-sized matrices
 * improc
     - Image processing routines
+    - Convolution/filtering routines are in Improc.hpp
     - convert_to_grayscale(), projective_transform live here
-* test.cpp
-    - The main test driver for all the other code and routines
+    - Histogram handling features are in Histogram.hpp
+* filter_test.cpp
+    - The main test driver for all filter calculations
+* histogram.cpp
+    - The main test driver for all histogram calculations
 
 
 ================================================================================
 Usage
 The usage of the program is as described in the problem statement:
 
-    HW1 -i inputFileName -o outputFileName [-c|{-p transformFileName N|B}]
+    HW2histo.exe -i input.bmp -o output.bmp [-e|-p|-m matchfile.bmp]
+
+    HW2filter.exe -i input.bmp -o output.bmp -f filter.txt [-m [k]]
 
 where:
 
     -i: the input file name
     -o: the output file name
-    -c: convert input file to grayscale (only works for .ppm files)
-    -p: transformation matrix file used to transform input file
-    [N/B]: Nearest neighbor interpolation/Bilinear interpolation for
-           transformation
+    -e: equalize histogram of input file
+    -p: plot histogram of input file
+    -m: match histogram of inputfile with matchfile
+
+    -f: the filter file name
+    -m: median filter, optional 'k' for kth-order filtering
 
 
 ================================================================================
 Bugs
-Currently, some of the output files do differ (mainly those from the
-output of the transformations). The output is visually the same.
+For the histogram code, I was unable to match exactly the input files. For
+example, the 'tire' image histogram is off by approximately 100 pixels or so.
+I believe this is throwing the other histogram calculations off since they
+utilize the regular histogram feature as a base for their computation.
+
+
+================================================================================
+Notes
+I chose to implement my own Bitmap I/O code. While I can successfully read and
+write images (test by doing image subtraction and looking for differences in
+pixel values), I'm unsure if it's introducing subtle differences that would
+cause my issues with the histogram. However, the filter code produces exactly
+the correct output, so I am not convinced it is the I/O code.
