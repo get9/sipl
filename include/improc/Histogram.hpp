@@ -16,7 +16,7 @@ template <typename Dtype>
 VectorX<uint32_t> histogram(const MatrixX<Dtype>& mat)
 {
     const auto max = std::numeric_limits<Dtype>::max();
-    VectorX<uint32_t> hist(max + 1);
+    VectorX<uint32_t> hist(max + 1, 0);
     for (int32_t i = 0; i < mat.size(); ++i) {
         hist[mat[i]]++;
     }
@@ -30,7 +30,7 @@ VectorX<uint32_t> histogram_cdf(const MatrixX<Dtype>& mat)
     const auto hist = histogram(mat);
 
     uint32_t sum = 0;
-    VectorX<uint32_t> cdf_hist(hist.size());
+    VectorX<uint32_t> cdf_hist(hist.size(), 0);
     for (int32_t i = 0; i < cdf_hist.size(); ++i) {
         sum += hist[i];
         cdf_hist[i] = sum;
@@ -53,13 +53,13 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
             break;
         }
     }
-    constexpr auto max = std::numeric_limits<uint8_t>::max();
+    constexpr int32_t max = std::numeric_limits<uint8_t>::max();
     VectorX<uint32_t> equalized_hist(cdf_hist.size());
     for (int32_t i = 0; i < equalized_hist.size(); ++i) {
         if (cdf_hist[i] == 0) {
             equalized_hist[i] = 0;
         } else {
-            equalized_hist[i] = uint32_t(std::round(
+            equalized_hist[i] = uint32_t(std::nearbyint(
                 ((cdf_hist[i] - cdf_min) / (double(mat.size()) - cdf_min)) *
                 max));
         }
@@ -78,22 +78,21 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
 // For now, only writes out 256x256 histogram image
 MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
 {
-    VectorXd normalized_hist = hist / double(hist.max());
-    constexpr int32_t max = std::numeric_limits<uint8_t>::max();
+    constexpr int32_t max = int32_t(std::numeric_limits<uint8_t>::max());
     constexpr int32_t max_size = max + 1;
 
     // Make a rotated histogram by drawing each row as the number of entries in
     // that bin
     MatrixX<uint8_t> hist_plot(max_size, max_size);
-    for (int32_t i = 0; i < hist_plot.dims[0]; ++i) {
-        const auto count = int32_t(normalized_hist[i] * max_size);
-        for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
-            hist_plot(i, j) = (j < count ? max : 0);
+    for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
+        const int32_t count =
+            std::nearbyint(hist[j] * max_size / double(hist.max()));
+        for (int32_t i = hist_plot.dims[0] - 1; i >= 0; --i) {
+            hist_plot(i, j) = (i < (max_size - count) ? max : 0);
         }
     }
 
-    // Rotate +90 degrees to orient it correctly
-    return rotate_image(hist_plot, 90);
+    return hist_plot;
 }
 
 // Histogram match - return a new matrix (doesn't modify old image)
@@ -104,23 +103,29 @@ MatrixX<Dtype> histogram_match(const MatrixX<Dtype>& target,
     // Calculate CDF for both images
     const auto target_cdf = histogram_cdf(target);
     const auto source_cdf = histogram_cdf(source);
+    const auto target_cdf_norm =
+        target_cdf / double(target_cdf[target_cdf.size() - 1]);
+    const auto source_cdf_norm =
+        source_cdf / double(source_cdf[source_cdf.size() - 1]);
 
     // Build lookup table for matching histograms
     // Note: due to grading requirements of picking the lowest intensity gray
     // level for instances of multimapped values from source CDF to target CDF,
     // iterate backwards so we pick the earlier gray level and use <= min_diff
-    constexpr auto max = std::numeric_limits<Dtype>::max();
-    VectorX<Dtype> lut(max);
+    constexpr int32_t max = int32_t(std::numeric_limits<uint8_t>::max() + 1);
+    VectorX<Dtype> lut(max, 0);
     for (int32_t j = 0; j < lut.size(); ++j) {
         int32_t min_diff = std::numeric_limits<int32_t>::max();
         for (int32_t i = target_cdf.size() - 1; i >= 0; --i) {
-            const auto res = std::abs(int32_t(target_cdf[i] - source_cdf[j]));
+            const int32_t res = std::abs(int32_t(
+                std::round((target_cdf_norm[i] - source_cdf_norm[j]) * max)));
             if (res <= min_diff) {
                 min_diff = res;
                 lut[j] = i;
             }
         }
     }
+    std::cout << lut << std::endl;
 
     // Alter the histogram of the source image to match target image via the LUT
     MatrixX<Dtype> modified_source(source.dims);

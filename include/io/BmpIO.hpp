@@ -7,6 +7,7 @@
 // boundary, not 4
 #pragma pack(push, 2)
 
+#include <iostream>
 #include "matrix/Matrix.hpp"
 #include "io/IOBase.hpp"
 
@@ -56,6 +57,37 @@ public:
 
     static void write(const MatrixX<uint8_t>& mat, const std::string& filename);
 };
+
+inline std::ostream& operator<<(std::ostream& s,
+                                const BmpIO::BITMAPINFOHEADER& i)
+{
+    s << "biSize:          " << i.biSize << std::endl;
+    s << "biWidth:         " << i.biWidth << std::endl;
+    s << "biHeight:        " << i.biHeight << std::endl;
+    s << "biPlanes:        " << i.biPlanes << std::endl;
+    s << "biBitCount:      " << i.biBitCount << std::endl;
+    s << "biCompression:   " << i.biCompression << std::endl;
+    s << "biSizeImage:     " << i.biSizeImage << std::endl;
+    s << "biXPelsPerMeter: " << i.biXPelsPerMeter << std::endl;
+    s << "biYPelsPerMeter: " << i.biYPelsPerMeter << std::endl;
+    s << "biClrUsed:       " << i.biClrUsed << std::endl;
+    s << "biClrImportant:  " << i.biClrImportant;
+    return s;
+}
+
+inline std::ostream& operator<<(std::ostream& s,
+                                const BmpIO::BITMAPFILEHEADER& h)
+{
+    const auto bfType = h.bfType;
+    char type[] = {
+        static_cast<char>(bfType), static_cast<char>(bfType >> 8), '\0'};
+    s << "bfType:          " << type << std::endl;
+    s << "bfSize:          " << h.bfSize << std::endl;
+    s << "bfReserved1:     " << h.bfReserved1 << std::endl;
+    s << "bfReserved2:     " << h.bfReserved2 << std::endl;
+    s << "bfOffBits:       " << h.bfOffBits;
+    return s;
+}
 }
 
 // Set alignment back to normal

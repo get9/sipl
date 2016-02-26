@@ -184,7 +184,8 @@ private:
     std::unique_ptr<Dtype[]> data_;
 
     // Helper functions to clamp a row/col index to in-bounds
-    int32_t clamp_row_index(const int32_t index) const {
+    int32_t clamp_row_index(const int32_t index) const
+    {
         if (index < 0) {
             return 0;
         } else if (index >= dims[0]) {
@@ -193,7 +194,8 @@ private:
             return index;
         }
     }
-	int32_t clamp_col_index(const int32_t index) const {
+    int32_t clamp_col_index(const int32_t index) const
+    {
         if (index < 0) {
             return 0;
         } else if (index >= dims[1]) {

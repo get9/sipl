@@ -2,7 +2,7 @@
 #include <cstring>
 #include <fstream>
 #include <cmath>
-#include "io/PgmIO.hpp"
+#include "io/BmpIO.hpp"
 #include "matrix/Matrix.hpp"
 #include "improc/Improc.hpp"
 
@@ -35,14 +35,14 @@ int main(int argc, char** argv)
     parse_commandline(argc, argv);
 
     // Read input files
-    const auto img = PgmIO::read(g_infile);
+    const auto img = BmpIO::read(g_infile);
     const auto kernel = parse_filter(g_filter_file);
 
     // Perform relevant action
     switch (g_action) {
     case ActionType::CONVOLVE: {
         const auto result = convolve(img, kernel);
-        PgmIO::write(result, g_outfile);
+        BmpIO::write(result, g_outfile);
         break;
     }
     case ActionType::KTH_FILTER: {
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
             (g_order == -1 ? nbor_width * nbor_height / 2 : g_order);
         const auto result =
             nonlinear_kth_filter(img, nbor_height, nbor_width, k);
-        PgmIO::write(result, g_outfile);
+        BmpIO::write(result, g_outfile);
         break;
     }
     case ActionType::UNKNOWN:

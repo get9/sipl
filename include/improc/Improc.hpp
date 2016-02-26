@@ -38,13 +38,15 @@ static inline Matrix33d inv(const Matrix33d& m)
 template <typename ElementType, typename InternalType>
 MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
                                           const Matrix33d& transform,
-                                          const InterpolateType interpolator)
+                                          const InterpolateType interpolator,
+                                          const ElementType fill_value)
 {
     // 1. Figure out sizes of new matrix
     auto c0 = homogenize(transform * Vector3d{0, 0, 1});
     auto c1 = homogenize(transform * Vector3d{0, double(image.dims[0]), 1});
     auto c2 = homogenize(transform * Vector3d{double(image.dims[1]), 0, 1});
-    auto c3 = homogenize(transform * Vector3d{double(image.dims[1]), double(image.dims[0]), 1});
+    auto c3 = homogenize(
+        transform * Vector3d{double(image.dims[1]), double(image.dims[0]), 1});
 
     // Raise or lower values as needed
     for (int32_t i = 0; i < 3; ++i) {
@@ -78,11 +80,13 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
             const double y = xy[1];
 
             // Skip any points outside image space
+            /*
             if (x < 0 || int32_t(x) >= image.dims[1] || y < 0 ||
                 int32_t(y) >= image.dims[0]) {
                 new_image(i, j) = ElementType(0);
                 continue;
             }
+            */
 
             // Need to interpolate
             switch (interpolator) {
@@ -90,13 +94,13 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
                 new_image(i, j) =
                     NearestNeighborInterpolator::interpolate<ElementType,
                                                              InternalType>(
-                        image, x, y);
+                        image, x, y, fill_value);
                 break;
             case InterpolateType::BILINEAR:
                 new_image(i, j) =
                     BilinearInterpolator::interpolate<ElementType,
                                                       InternalType>(
-                        image, x, y);
+                        image, x, y, fill_value);
                 break;
             }
         }
@@ -126,7 +130,8 @@ MatrixX<Dtype> rotate_image(
     const double degrees,
     const InterpolateType type = InterpolateType::BILINEAR)
 {
-const double rads = degrees * M_PI / 180;	  Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
+    const double rads = degrees / 180.0 * M_PI;
+    Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
     return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);

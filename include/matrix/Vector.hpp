@@ -216,6 +216,15 @@ public:
     {
     }
 
+    Vector(const int32_t length, const Dtype fill_scalar)
+        : dims({length})
+        , nelements_(int32_t(length))
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]()))
+    {
+        fill(fill_scalar);
+    }
+
     // Move constructor
     Vector(Vector&& other)
         : dims(std::move(other.dims))
@@ -235,6 +244,11 @@ public:
         for (int32_t i = 0; i < other.size(); ++i) {
             data_[i] = other[i];
         }
+    }
+
+    void fill(const Dtype scalar)
+    {
+        std::fill(data_.get(), data_.get() + nelements_, scalar);
     }
 
     // Const accessor
@@ -270,48 +284,22 @@ public:
 
     bool empty(void) const { return nelements_ == 0; }
 
-    Dtype max(void) const
-    {
-        Dtype max = data_[0];
-        for (int32_t i = 1; i < nelements_; ++i) {
-            if (data_[i] > max) {
-                max = data_[i];
-            }
-        }
-        return max;
-    }
+    Dtype max(void) const { return data_[max_element()]; }
 
     int32_t max_element(void) const
     {
-        int32_t max_idx = 0;
-        for (int32_t i = 1; i < nelements_; ++i) {
-            if (data_[i] > data_[max_idx]) {
-                max_idx = i;
-            }
-        }
-        return max_idx;
+        return std::distance(
+            data_.get(),
+            std::max_element(data_.get(), data_.get() + nelements_));
     }
 
-    Dtype min(void) const
-    {
-        Dtype min = std::numeric_limits<Dtype>::max();
-        for (int32_t i = 0; i < nelements_; ++i) {
-            if (data_[i] < min) {
-                min = data_[i];
-            }
-        }
-        return min;
-    }
+    Dtype min(void) const { return data_[min_element()]; }
 
     int32_t min_element(void) const
     {
-        int32_t min_idx = 0;
-        for (int32_t i = 1; i < nelements_; ++i) {
-            if (data_[i] < data_[min_idx]) {
-                min_idx = i;
-            }
-        }
-        return min_idx;
+        return std::distance(
+            data_.get(),
+            std::min_element(data_.get(), data_.get() + nelements_));
     }
 
     // Copy-assign

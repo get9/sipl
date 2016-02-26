@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include "io/BmpIO.hpp"
 #include "io/PgmIO.hpp"
 #include "improc/Histogram.hpp"
 
@@ -27,25 +28,24 @@ int main(int argc, char** argv)
     }
 
     parse_commandline(argc, argv);
-
-    const auto img = PgmIO::read(g_infile);
+    const auto img = BmpIO::read(g_infile);
 
     switch (g_action) {
     case ActionType::EQUALIZE: {
         const auto equalized_img = equalize_hist(img);
-        PgmIO::write(equalized_img, g_outfile);
+        BmpIO::write(equalized_img, g_outfile);
         break;
     }
     case ActionType::PLOT: {
         const auto hist = histogram(img);
         const auto hist_img = hist_to_img(hist);
-        PgmIO::write(hist_img, g_outfile);
+        BmpIO::write(hist_img, g_outfile);
         break;
     }
     case ActionType::MATCH: {
-        const auto target_img = PgmIO::read(g_matchfile);
+        const auto target_img = BmpIO::read(g_matchfile);
         const auto matched_img = histogram_match(target_img, img);
-        PgmIO::write(matched_img, g_outfile);
+        BmpIO::write(matched_img, g_outfile);
         break;
     }
     case ActionType::UNKNOWN:
@@ -73,7 +73,6 @@ void parse_commandline(int32_t argc, char** argv)
         } else if (std::strncmp(argv[i], "-m", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::MATCH;
-            ++i;
             g_matchfile = std::string(argv[i]);
         }
         ++i;
