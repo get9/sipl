@@ -74,13 +74,13 @@ public:
 
     Dtype& operator[](int32_t index) { return data_[index]; }
 
-    // Raw accessor for data buffer
-    const Dtype* buffer(void) const
+    // Raw accessor for data
+    const Dtype* data(void) const
     {
         return reinterpret_cast<const Dtype*>(data_.get());
     }
 
-    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.get()); }
+    Dtype* data(void) { return reinterpret_cast<Dtype*>(data_.get()); }
 
     // Accessors for the buffer as bytes (for serialization, etc)
     const char* as_bytes(void) const
@@ -88,7 +88,7 @@ public:
         return reinterpret_cast<const char*>(data_.get());
     }
 
-    char* bytes(void) { return reinterpret_cast<char*>(data_.get()); }
+    char* as_bytes(void) { return reinterpret_cast<char*>(data_.get()); }
 
     int32_t size(void) const { return nelements_; }
 
