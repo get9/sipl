@@ -1,0 +1,14 @@
+/*
+ * Main inclusion header for all vector-related things
+ */
+
+#pragma once
+
+#ifndef SIPL_MATRIX_VECTOR
+#define SIPL_MATRIX_VECTOR
+
+#include "matrix/VectorBase.hpp"
+#include "matrix/Vector.hpp"
+#include "matrix/VectorOps.hpp"
+
+#endif
