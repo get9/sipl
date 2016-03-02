@@ -86,9 +86,9 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
     MatrixX<uint8_t> hist_plot(max_size, max_size);
     for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
         const int32_t count =
-            std::nearbyint(hist[j] * max_size / double(hist.max()));
+            std::round(hist[j] * max_size / double(hist.max()));
         for (int32_t i = hist_plot.dims[0] - 1; i >= 0; --i) {
-            hist_plot(i, j) = (i < (max_size - count) ? max : 0);
+            hist_plot(i, j) = (i > count ? max : 0);
         }
     }
 
