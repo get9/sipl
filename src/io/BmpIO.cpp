@@ -7,6 +7,20 @@
 
 using namespace sipl;
 
+// Clamp a value to min/max values
+uint8_t clamp(const double val)
+{
+    const auto min = std::numeric_limits<uint8_t>::min();
+    const auto max = std::numeric_limits<uint8_t>::max();
+    if (val >= max) {
+        return max;
+    } else if (val <= min) {
+        return min;
+    } else {
+        return uint8_t(std::round(val));
+    }
+}
+
 MatrixX<uint8_t> BmpIO::read(const char* filename)
 {
     return read(std::string(filename));
@@ -46,11 +60,12 @@ MatrixX<uint8_t> BmpIO::read(const std::string& filename)
 
     // "normal" position, not in the "image" position
     for (int32_t i = img.dims[0] - 1; i >= 0; --i) {
-        const auto row_start = data_start + i * padded_row_size;
-        const auto row_end = row_start + info_header->biWidth;
-        const auto mat_start =
-            img.bytes() + (img.dims[0] - 1 - i) * img.dims[1];
-        std::copy(row_start, row_end, mat_start);
+        const auto off = i * padded_row_size;
+        for (int32_t j = 0; j < img.dims[1]; ++j) {
+            const auto grayval = uint8_t(data_start[j + off]);
+            img(img.dims[0] - 1 - i, j) =
+                clamp(0.299 * grayval + 0.587 * grayval + 0.114 * grayval);
+        }
     }
 
     return img;
