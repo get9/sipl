@@ -36,10 +36,11 @@ static inline Matrix33d inv(const Matrix33d& m)
 }
 
 template <typename ElementType, typename InternalType>
-MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
-                                          const Matrix33d& transform,
-                                          const InterpolateType interpolator,
-                                          const ElementType fill_value)
+MatrixX<ElementType> projective_transform(
+    const MatrixX<ElementType>& image,
+    const Matrix33d& transform,
+    const InterpolateType interpolator,
+    const ElementType fill_value = ElementType(0))
 {
     // 1. Figure out sizes of new matrix
     auto c0 = homogenize(transform * Vector3d{0, 0, 1});
@@ -49,18 +50,10 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
         transform * Vector3d{double(image.dims[1]), double(image.dims[0]), 1});
 
     // Raise or lower values as needed
-    for (int32_t i = 0; i < 3; ++i) {
-        c0[i] = std::round(c0[i]);
-    }
-    for (int32_t i = 0; i < 3; ++i) {
-        c1[i] = std::round(c1[i]);
-    }
-    for (int32_t i = 0; i < 3; ++i) {
-        c2[i] = std::round(c2[i]);
-    }
-    for (int32_t i = 0; i < 3; ++i) {
-        c3[i] = std::round(c3[i]);
-    }
+    c0.apply([](auto d) { return std::round(d); });
+    c1.apply([](auto d) { return std::round(d); });
+    c2.apply([](auto d) { return std::round(d); });
+    c3.apply([](auto d) { return std::round(d); });
 
     int32_t ymin = int32_t(std::min({c0[1], c1[1], c2[1], c3[1]}));
     int32_t ymax = int32_t(std::max({c0[1], c1[1], c2[1], c3[1]}));
@@ -78,15 +71,6 @@ MatrixX<ElementType> projective_transform(const MatrixX<ElementType>& image,
             Vector3d xy = homogenize(inverse * uv);
             const double x = xy[0];
             const double y = xy[1];
-
-            // Skip any points outside image space
-            /*
-            if (x < 0 || int32_t(x) >= image.dims[1] || y < 0 ||
-                int32_t(y) >= image.dims[0]) {
-                new_image(i, j) = ElementType(0);
-                continue;
-            }
-            */
 
             // Need to interpolate
             switch (interpolator) {
@@ -127,7 +111,7 @@ MatrixX<uint8_t> color_to_grayscale(const MatrixX<RgbPixel>& color)
 template <typename Dtype>
 MatrixX<Dtype> rotate_image(
     const MatrixX<Dtype>& in_mat,
-    const double degrees,
+    double degrees,
     const InterpolateType type = InterpolateType::BILINEAR)
 {
     const double rads = degrees / 180.0 * M_PI;
@@ -171,9 +155,9 @@ MatrixX<Dtype> convolve(const MatrixX<Dtype>& img, const MatrixXd& kernel)
 
 template <typename Dtype>
 MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
-                                    const int32_t height,
-                                    const int32_t width,
-                                    const int32_t k)
+                                    int32_t height,
+                                    int32_t width,
+                                    int32_t k)
 {
     assert(width % 2 == 1 && height % 2 == 1 && "width and height must be odd");
     assert(k >= 0 && k < width * height && "k out of bounds");
@@ -185,7 +169,7 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
     for (int32_t i = 0; i < img.dims[0]; ++i) {
         for (int32_t j = 0; j < img.dims[1]; ++j) {
             auto patch = img.patch(i, j, height / 2, width / 2);
-            std::sort(patch.buffer(), patch.buffer() + patch.size());
+            std::sort(patch.data(), patch.data() + patch.size());
             result(i, j) = patch[k];
         }
     }
