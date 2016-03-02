@@ -9,24 +9,116 @@
 #include <array>
 #include <string>
 #include <cassert>
+#include "matrix/VectorBase.hpp"
 #include "Constants.hpp"
 
 namespace sipl
 {
 
+// Wrapper for std::unique_ptr<Dtype[]>. Need this so we can use the regular
+// VectorBase calls
+template <typename Dtype>
+struct UniquePtrWrapper {
+    std::unique_ptr<Dtype[]> data_;
+    int32_t size_;
+
+    UniquePtrWrapper() : data_(nullptr) {}
+
+    UniquePtrWrapper(int32_t size) : data_(new Dtype[size]), size_(size) {}
+
+    UniquePtrWrapper(const UniquePtrWrapper& other) : size_(other.size)
+    {
+        std::copy(
+            std::begin(other.data_), std::end(other.data_), std::begin(data_));
+    }
+
+    UniquePtrWrapper(UniquePtrWrapper&& other)
+        : data_(std::move(other.data_)), size_(other.size_)
+    {
+        other.data_ = nullptr;
+        other.size_ = 0;
+    }
+
+    Dtype* begin() { return data_.get(); }
+
+    const Dtype* begin() const { return data_.get(); }
+
+    Dtype* end() { return data_.get() + size_; }
+
+    const Dtype* end() const { return data_.get() + size_; }
+
+    int32_t size() const { return size_; }
+
+    Dtype& operator[](int32_t index) { return data_[index]; }
+
+    const Dtype& operator[](int32_t index) const { return data_[index]; }
+
+    Dtype* data() { return data_.get(); }
+
+    const Dtype* data() const { return data_.get(); }
+};
+
+// Derived class for Vector. Note that it doesn't need to do anything because
+// everything's already implemented by BaseVector
+template <typename Dtype, int32_t Length>
+class Vector : public VectorBase<Dtype, Length, std::array<Dtype, Length>>
+{
+public:
+    using BaseClass = VectorBase<Dtype, Length, std::array<Dtype, Length>>;
+
+    Vector() : BaseClass() {}
+
+    Vector(Dtype fill_value) : BaseClass(fill_value) {}
+
+    Vector(std::initializer_list<Dtype> list) : BaseClass(list) {}
+};
+
+template <typename Dtype>
+class Vector<Dtype, Dynamic>
+    : public VectorBase<Dtype, Dynamic, UniquePtrWrapper<Dtype>>
+{
+public:
+    using BaseClass = VectorBase<Dtype, Dynamic, UniquePtrWrapper<Dtype>>;
+
+    // Need to use 'this' pointer below because templated base class members are
+    // not visible in a certain phase of compilation. See here:
+    // http://stackoverflow.com/a/6592617
+    Vector(int32_t size) : data_(UniquePtrWrapper<Dtype>(size))
+    {
+        this->nelements_ = size;
+        this->nbytes_ = size * int32_t(sizeof(Dtype));
+    }
+
+    Vector(int32_t size, Dtype fill_scalar)
+        : data_(UniquePtrWrapper<Dtype>(size))
+    {
+        this->nelements_ = size;
+        this->nbytes_ = size * int32_t(sizeof(Dtype));
+        std::fill(std::begin(data_), std::end(data_), fill_scalar);
+    }
+
+    Vector(std::initializer_list<Dtype> list)
+        : data_(UniquePtrWrapper<Dtype>(list.size()))
+    {
+        this->nelements_ = list.size();
+        this->nbytes_ = list.size() * int32_t(sizeof(Dtype));
+        std::copy(std::begin(list), std::end(list), std::begin(data_));
+    }
+
+private:
+    UniquePtrWrapper<Dtype> data_;
+};
+
+/*
 // Partial specialization for static Vector type
 template <typename Dtype, int32_t Length>
 class Vector
 {
 public:
-    const std::array<int32_t, 1> dims;
-
-    Vector() : dims({Length}), nelements_(Length), data_() {}
+    Vector() : nelements_(Length), data_() {}
 
     Vector(std::initializer_list<Dtype> list)
-        : dims({Length})
-        , nelements_(Length)
-        , nbytes_(int32_t(sizeof(Dtype)) * nelements_)
+        : nelements_(Length), nbytes_(int32_t(sizeof(Dtype)) * nelements_)
     {
         // std::initializer_list::size() is not marked constexpr, so can't use
         // this
@@ -38,17 +130,14 @@ public:
 
     // Fill vector with single scalar (useful for 0, etc)
     Vector(const Dtype scalar)
-        : dims({Length})
-        , nelements_(Length)
-        , nbytes_(int32_t(sizeof(Dtype)) * nelements_)
+        : nelements_(Length), nbytes_(int32_t(sizeof(Dtype)) * nelements_)
     {
         std::fill(std::begin(data_), std::end(data_), scalar);
     }
 
     // Move constructor
     Vector(Vector&& other)
-        : dims(std::move(other.dims))
-        , nelements_(other.dims[0])
+        : nelements_(other.nelements_)
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
@@ -58,7 +147,7 @@ public:
 
     // Copy constructor
     Vector(const Vector& other)
-        : dims(other.dims), nelements_(other.nelements_), nbytes_(other.nbytes_)
+        : nelements_(other.nelements_), nbytes_(other.nbytes_)
     {
         for (int32_t i = 0; i < other.size(); ++i) {
             data_[i] = other[i];
@@ -85,12 +174,12 @@ public:
     }
 
     // Raw accessor for data buffer
-    const Dtype* buffer(void) const
+    const Dtype* data(void) const
     {
         return reinterpret_cast<const Dtype*>(data_.data());
     }
 
-    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.data()); }
+    Dtype* data(void) { return reinterpret_cast<Dtype*>(data_.data()); }
 
     // Accessors for the buffer as bytes (for serialization, etc)
     const char* as_bytes(void) const
@@ -98,7 +187,7 @@ public:
         return reinterpret_cast<const char*>(data_.data());
     }
 
-    char* bytes(void) { return reinterpret_cast<char*>(data_.data()); }
+    char* as_bytes(void) { return reinterpret_cast<char*>(data_.data()); }
 
     int32_t size(void) const { return nelements_; }
 
@@ -128,7 +217,6 @@ public:
     Vector& operator=(const Vector& other)
     {
         if (this != &other) {
-            dims = other.dims;
             nelements_ = other.nelements_;
             nbytes_ = other.nbytes_;
             data_.release();
@@ -143,8 +231,6 @@ public:
     Vector& operator=(Vector&& other)
     {
         if (this != &other) {
-            dims = std::move(other.dims);
-            other.dims = {0};
             nelements_ = other.nelements_;
             other.nelements_ = 0;
             nbytes_ = other.nbytes_;
@@ -154,11 +240,19 @@ public:
         return *this;
     }
 
+    template <typename Functor>
+    void apply(Functor f)
+    {
+        std::transform(
+            std::begin(data_), std::end(data_), std::begin(data_), f);
+    }
+
 private:
     int32_t nelements_;
     int32_t nbytes_;
     std::array<Dtype, Length> data_;
 };
+*/
 
 template <typename T, int32_t Length>
 Vector<double, Length> operator/(const Vector<T, Length>& v, const double s)
@@ -199,26 +293,23 @@ using Vector3d = Vector3<double>;
 using Vector3i = Vector3<int32_t>;
 using RgbPixel = Vector3b;
 
+/*
 // Partial specialization for dynamic Vector type
 template <typename Dtype>
 class Vector<Dtype, Dynamic>
 {
 public:
-    const std::array<int32_t, 1> dims;
-
-    Vector() : dims({0}), nelements_(0), data_(nullptr) {}
+    Vector() : nelements_(0), data_(nullptr) {}
 
     Vector(const int32_t length)
-        : dims({length})
-        , nelements_(int32_t(length))
+        : nelements_(int32_t(length))
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]()))
     {
     }
 
     Vector(const int32_t length, const Dtype fill_scalar)
-        : dims({length})
-        , nelements_(int32_t(length))
+        : nelements_(int32_t(length))
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::unique_ptr<Dtype[]>(new Dtype[nelements_]()))
     {
@@ -227,8 +318,7 @@ public:
 
     // Move constructor
     Vector(Vector&& other)
-        : dims(std::move(other.dims))
-        , nelements_(dims[0])
+        : nelements_(other.nelements_)
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(std::move(other.data_))
     {
@@ -239,7 +329,7 @@ public:
 
     // Copy constructor
     Vector(const Vector& other)
-        : dims(other.dims), nelements_(other.nelements_), nbytes_(other.nbytes_)
+        : nelements_(other.nelements_), nbytes_(other.nbytes_)
     {
         for (int32_t i = 0; i < other.size(); ++i) {
             data_[i] = other[i];
@@ -263,12 +353,12 @@ public:
     Dtype& operator[](int32_t index) { return data_[index]; }
 
     // Raw accessor for data buffer
-    const Dtype* buffer(void) const
+    const Dtype* data(void) const
     {
         return reinterpret_cast<const Dtype*>(data_.data());
     }
 
-    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.data()); }
+    Dtype* data(void) { return reinterpret_cast<Dtype*>(data_.data()); }
 
     // Accessors for the buffer as bytes (for serialization, etc)
     const char* as_bytes(void) const
@@ -276,7 +366,7 @@ public:
         return reinterpret_cast<const char*>(data_.data());
     }
 
-    char* bytes(void) { return reinterpret_cast<char*>(data_.data()); }
+    char* as_bytes(void) { return reinterpret_cast<char*>(data_.data()); }
 
     int32_t size(void) const { return nelements_; }
 
@@ -306,7 +396,6 @@ public:
     Vector& operator=(const Vector& other)
     {
         if (this != &other) {
-            dims = other.dims;
             nelements_ = other.nelements_;
             nbytes_ = other.nbytes_;
             data_.release();
@@ -321,7 +410,6 @@ public:
     Vector& operator=(Vector&& other)
     {
         if (this != &other) {
-            dims = other.dims;
             nelements_ = other.nelements_;
             other.nelements_ = 0;
             nbytes_ = other.nbytes_;
@@ -331,11 +419,26 @@ public:
         return *this;
     }
 
+    template <typename Functor>
+    void apply(Functor f)
+    {
+        std::transform(data_, data_ + nelements_, data_, f);
+    }
+
+    template <typename Functor>
+    Vector apply(Functor f) const
+    {
+        Vector new_v;
+        std::transform(data_, data_ + nelements_, new_v.data(), f);
+        return new_v;
+    }
+
 private:
     int32_t nelements_;
     int32_t nbytes_;
     std::unique_ptr<Dtype[]> data_;
 };
+*/
 
 template <typename Dtype, int32_t Length>
 std::string as_string(const Vector<Dtype, Length>& v)
