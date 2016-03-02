@@ -90,12 +90,12 @@ public:
     }
 
     // Raw accessor for data buffer
-    const Dtype* buffer(void) const
+    const Dtype* data(void) const
     {
         return reinterpret_cast<const Dtype*>(data_);
     }
 
-    Dtype* buffer(void) { return reinterpret_cast<Dtype*>(data_.data()); }
+    Dtype* data(void) { return reinterpret_cast<Dtype*>(data_.data()); }
 
     // Accessors for the buffer as bytes (for serialization, etc)
     const char* as_bytes(void) const
