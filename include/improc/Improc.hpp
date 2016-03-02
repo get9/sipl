@@ -6,7 +6,7 @@
 #include <limits>
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include "matrix/Vector.hpp"
+#include "matrix/Vector"
 #include "matrix/Matrix.hpp"
 #include "improc/NearestNeighborInterpolator.hpp"
 #include "improc/BilinearInterpolator.hpp"

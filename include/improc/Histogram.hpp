@@ -5,7 +5,7 @@
 
 #include <limits>
 #include <cstdlib>
-#include "matrix/Vector.hpp"
+#include "matrix/Vector"
 #include "improc/Improc.hpp"
 
 namespace sipl

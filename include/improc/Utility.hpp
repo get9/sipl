@@ -5,7 +5,7 @@
 
 #include <limits>
 #include <cmath>
-#include "matrix/Vector.hpp"
+#include "matrix/Vector"
 
 namespace sipl
 {
