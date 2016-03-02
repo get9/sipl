@@ -69,7 +69,7 @@ MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
 
     // Read binary data directly into the Matrix's data buffer
     MatrixX<uint8_t> mat{height, width};
-    stream.read(mat.bytes(), int64_t(mat.size_in_bytes()));
+    stream.read(mat.as_bytes(), int64_t(mat.size_in_bytes()));
     return mat;
 }
 
