@@ -40,4 +40,4 @@ set(SIPL_SOURCES
 
 add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
 add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
-add_executable(io_test bmp_test.cpp "${SIPL_SOURCES}")
+add_executable(HW1 test.cpp "${SIPL_SOURCES}")
