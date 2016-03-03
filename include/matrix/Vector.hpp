@@ -6,84 +6,55 @@
 #include <algorithm>
 #include <array>
 #include "matrix/VectorBase.hpp"
+#include "matrix/Wrappers.hpp"
 #include "Constants.hpp"
 
 namespace sipl
 {
 
-// Wrapper for Dtype*. Need this so we can use the regular VectorBase calls.
-template <typename Dtype>
-struct DynamicArrayWrapper {
-    Dtype* data_;
-    int32_t size_;
-
-    DynamicArrayWrapper() : data_(nullptr) {}
-
-    DynamicArrayWrapper(int32_t size) : data_(new Dtype[size]), size_(size) {}
-
-    DynamicArrayWrapper(DynamicArrayWrapper&& other)
-        : data_(std::move(other.data_)), size_(other.size_)
-    {
-        other.data_ = nullptr;
-        other.size_ = 0;
-    }
-
-    DynamicArrayWrapper& operator=(const DynamicArrayWrapper& other)
-    {
-        if (data_ != nullptr) {
-            delete[] data_;
-        }
-        size_ = other.size_;
-        data_ = new Dtype[other.size_];
-        std::copy(std::begin(other), std::end(other), data_);
-        return *this;
-    }
-
-    DynamicArrayWrapper& operator=(DynamicArrayWrapper&& other)
-    {
-        data_ = std::move(other.data_);
-        other.data_ = nullptr;
-        size_ = other.size_;
-        other.size_ = 0;
-        return *this;
-    }
-
-    Dtype* begin() { return data_; }
-
-    const Dtype* begin() const { return data_; }
-
-    Dtype* end() { return data_ + size_; }
-
-    const Dtype* end() const { return data_ + size_; }
-
-    int32_t size() const { return size_; }
-
-    Dtype& operator[](int32_t index) { return data_[index]; }
-
-    const Dtype& operator[](int32_t index) const { return data_[index]; }
-
-    Dtype& operator()(int32_t index) { return data_[index]; }
-
-    const Dtype& operator()(int32_t index) const { return data_[index]; }
-
-    Dtype* data() { return data_; }
-
-    const Dtype* data() const { return data_; }
-};
-
 // Derived class for statically allocated Vector.
 template <typename Dtype, int32_t Length>
-class Vector : public VectorBase<Dtype, Length, std::array<Dtype, Length>>
+class Vector
+    : public VectorBase<Dtype, Length, StaticArrayWrapper<Dtype, Length>>
 {
 public:
-    using BaseClass = VectorBase<Dtype, Length, std::array<Dtype, Length>>;
-    using BaseClass::data_;
+    Vector()
+    {
+        this->nelements_(0);
+        this->nbytes_(0);
+    }
 
-    Vector() : BaseClass() {}
+    Vector(Dtype fill_value)
+    {
+        this->nelements_ = Length;
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+    }
 
-    Vector(Dtype fill_value) : BaseClass(fill_value) {}
+    Vector(std::initializer_list<Dtype> list)
+    {
+        this->nelements_ = Length;
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        std::copy(std::begin(list), std::end(list), std::begin(this->data_));
+    }
 
-    Vector(std::initializer_list<Dtype> list) : BaseClass(list) {}
+    Vector(const Vector& other)
+    {
+        this->nelements_ = Length;
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        std::copy(std::begin(other.data_),
+                  std::end(other.data_),
+                  std::begin(this->data_));
+    }
+
+    Vector(Vector&& other)
+    {
+        this->nelements_ = other.nelements_;
+        other.nelements_ = 0;
+        this->nbytes_ = other.nbytes_;
+        other.nbytes_ = 0;
+        this->data_ = std::move(other.data_);
+    }
 };
 
 // Specialization of the above for dynamically-allocated Vector.
@@ -92,8 +63,6 @@ class Vector<Dtype, Dynamic>
     : public VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype>>
 {
 public:
-    using BaseClass = VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype>>;
-
     // Need to use 'this' pointer below because templated base class members are
     // not visible in a certain phase of compilation. See here:
     // http://stackoverflow.com/a/6592617
@@ -118,6 +87,25 @@ public:
         this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
         std::copy(std::begin(list), std::end(list), std::begin(this->data_));
+    }
+
+    Vector(const Vector& other)
+    {
+        this->nelements_ = other.nelements_;
+        this->nbytes_ = other.nbytes_;
+        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
+        std::copy(std::begin(other.data_),
+                  std::end(other.data_),
+                  std::begin(this->data_));
+    }
+
+    Vector(Vector&& other)
+    {
+        this->nelements_ = other.nelements_;
+        other.nelements_ = 0;
+        this->nbytes_ = other.nbytes_;
+        other.nbytes_ = 0;
+        this->data_ = std::move(other.data_);
     }
 };
 
