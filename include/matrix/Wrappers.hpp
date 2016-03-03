@@ -58,6 +58,30 @@ struct DynamicArrayWrapper {
 
     Dtype* data() { return data_; }
     const Dtype* data() const { return data_; }
+
+    Dtype& front()
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[0];
+    }
+
+    const Dtype& front() const
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[0];
+    }
+
+    Dtype& back()
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[size_ - 1];
+    }
+
+    const Dtype& back() const
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[size_ - 1];
+    }
 };
 
 // Wrapper for Dtype*. Need this so we can use the regular VectorBase calls.
@@ -66,7 +90,7 @@ struct StaticArrayWrapper {
     std::array<Dtype, Length> data_;
     int32_t size_;
 
-    StaticArrayWrapper() : data_() {}
+    StaticArrayWrapper() : data_(), size_(0) {}
 
     StaticArrayWrapper(int32_t size) : data_(), size_(size) {}
 
@@ -91,11 +115,11 @@ struct StaticArrayWrapper {
         return *this;
     }
 
-    Dtype* begin() { return data_.data(); }
-    const Dtype* begin() const { return data_.data(); }
+    Dtype* begin() { return data_.begin(); }
+    const Dtype* begin() const { return data_.begin(); }
 
-    Dtype* end() { return data_.data() + size_; }
-    const Dtype* end() const { return data_.data() + size_; }
+    Dtype* end() { return data_.end(); }
+    const Dtype* end() const { return data_.end(); }
 
     int32_t size() const { return size_; }
 
@@ -107,6 +131,28 @@ struct StaticArrayWrapper {
 
     Dtype* data() { return data_.data(); }
     const Dtype* data() const { return data_.data(); }
+
+    Dtype& front()
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[0];
+    }
+    const Dtype& front() const
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[0];
+    }
+
+    Dtype& back()
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[size_ - 1];
+    }
+    const Dtype& back() const
+    {
+        assert(size_ > 0 && "size mismatch");
+        return data_[size_ - 1];
+    }
 };
 
 #endif

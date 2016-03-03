@@ -70,12 +70,20 @@ public:
         return *this;
     }
 
-    // Iterator access
+    bool empty() const { return nelements_ == 0; }
+
+    // Iterator & element access
     Dtype* begin() { return std::begin(data_); }
     const Dtype* begin() const { return std::begin(data_); }
 
     Dtype* end() { return std::end(data_); }
     const Dtype* end() const { return std::end(data_); }
+
+    Dtype& front() { return data_.front(); }
+    const Dtype& front() const { return data_.front(); }
+
+    Dtype& back() { return data_.back(); }
+    const Dtype& back() const { return data_.back(); }
 
     // Element accessors
     const Dtype& operator()(const int32_t i) const
@@ -171,10 +179,8 @@ public:
     VectorBase apply_clone(Functor f) const
     {
         VectorBase new_v(nelements_);
-        std::cout << new_v << std::endl;
         std::transform(
             std::begin(data_), std::end(data_), std::begin(new_v), f);
-        std::cout << new_v << std::endl;
         return new_v;
     }
 
@@ -219,6 +225,20 @@ public:
     {
         auto m = std::min_element(std::begin(data_), std::end(data_));
         return m - std::begin(data_);
+    }
+
+    // Convert to a string representation
+    std::string str() const
+    {
+        if (empty()) {
+            return "[]";
+        }
+        std::string res = "[";
+        for (int32_t i = 0; i < nelements_ - 1; ++i) {
+            res += std::to_string(data_[i]) + ", ";
+        }
+        res += std::to_string(back()) + "]";
+        return res;
     }
 
 protected:

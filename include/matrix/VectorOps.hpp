@@ -1,73 +1,69 @@
 #include "matrix/VectorBase.hpp"
 
 // Free-function operations
-template <typename Dtype, int32_t Length, typename Container, typename Scalar>
-sipl::VectorBase<Dtype, Length, Container> operator/(
-    sipl::VectorBase<Dtype, Length, Container> v, Scalar s)
+template <typename VectorType, typename Scalar>
+VectorType operator/(
+    VectorType v,
+    typename std::enable_if<std::is_integral<Scalar>::value>::type s)
 {
     v /= s;
     return v;
 }
 
-template <typename Scalar, typename Dtype, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator*(
-    sipl::VectorBase<Dtype, Length, Container> v, Scalar s)
+template <typename VectorType, typename Scalar>
+VectorType operator*(VectorType v, Scalar s)
 {
     v *= s;
     return v;
 }
 
-template <typename Scalar, typename Dtype, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator*(
-    Scalar s, sipl::VectorBase<Dtype, Length, Container> v)
+template <typename VectorType, typename Scalar>
+VectorType operator*(Scalar s, VectorType v)
 {
     return v * s;
 }
 
-template <typename Scalar, typename Dtype, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator+(
-    sipl::VectorBase<Dtype, Length, Container> v, Scalar s)
+template <typename VectorType, typename Scalar>
+VectorType operator+(
+    VectorType v,
+    typename std::enable_if<std::is_integral<Scalar>::value>::type s)
 {
     v += s;
     return v;
 }
 
-template <typename Scalar, typename Dtype, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator+(
-    Scalar s, sipl::VectorBase<Dtype, Length, Container> v)
+template <typename VectorType, typename Scalar>
+VectorType operator+(
+    typename std::enable_if<std::is_integral<Scalar>::value>::type s,
+    VectorType v)
 {
     return s + v;
 }
 
-template <typename Scalar, typename Dtype, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator-(
-    sipl::VectorBase<Dtype, Length, Container> v, Scalar s)
+template <typename VectorType, typename Scalar>
+VectorType operator-(VectorType v, Scalar s)
 {
     v -= s;
     return v;
 }
 
 // Operators for vectors of different types
-template <typename Dtype, typename U, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator+(
-    const sipl::VectorBase<Dtype, Length, Container>& v1,
-    const sipl::Vector<U, Length>& v2)
+template <typename VectorType1, typename VectorType2>
+VectorType1 operator+(const VectorType1& v1, const VectorType2& v2)
 {
     assert(v1.size() == v2.size() && "size mismatch");
-    sipl::VectorBase<Dtype, Length, Container> new_v(v1.size());
+    VectorType1 new_v(v1.size());
     for (int32_t i = 0; i < v1.size(); ++i) {
         new_v[i] = v1[i] + v2[i];
     }
     return new_v;
 }
 
-template <typename Dtype, typename U, int32_t Length, typename Container>
-sipl::VectorBase<Dtype, Length, Container> operator-(
-    const sipl::VectorBase<Dtype, Length, Container>& v1,
-    const sipl::Vector<U, Length>& v2)
+template <typename VectorType1, typename VectorType2>
+VectorType1 operator-(const VectorType1& v1, const VectorType2& v2)
 {
     assert(v1.size() == v2.size() && "size mismatch");
-    sipl::VectorBase<Dtype, Length, Container> new_v(v1.size());
+    VectorType1 new_v(v1.size());
     for (int32_t i = 0; i < v1.size(); ++i) {
         new_v[i] = v1[i] - v2[i];
     }
@@ -75,9 +71,8 @@ sipl::VectorBase<Dtype, Length, Container> operator-(
 }
 
 // Comparison operators
-template <typename Dtype, int32_t Length, typename Container>
-bool operator==(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-                const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator==(const VectorType1& lhs, const VectorType2& rhs)
 {
     assert(lhs.size() == rhs.size() && "size mismatch");
     for (int32_t i = 0; i < lhs.size(); ++i) {
@@ -88,70 +83,43 @@ bool operator==(const sipl::VectorBase<Dtype, Length, Container>& lhs,
     return true;
 }
 
-template <typename Dtype, int32_t Length, typename Container>
-bool operator!=(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-                const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator!=(const VectorType1& lhs, const VectorType2& rhs)
 {
     return !operator==(lhs, rhs);
 }
 
 // XXX Better to compare based on norm or
-template <typename Dtype, int32_t Length, typename Container>
-bool operator<(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-               const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator<(const VectorType1& lhs, const VectorType2& rhs)
 {
     return lhs.norm() < rhs.norm();
 }
 
-// XXX Better to compare based on norm or
-template <typename Dtype, int32_t Length, typename Container>
-bool operator>(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-               const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator>(const VectorType1& lhs, const VectorType2& rhs)
 {
     return operator<(rhs, lhs);
 }
 
-// XXX Better to compare based on norm or
-template <typename Dtype, int32_t Length, typename Container>
-bool operator<=(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-                const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator<=(const VectorType1& lhs, const VectorType2& rhs)
 {
     return !operator>(lhs, rhs);
 }
 
-// XXX Better to compare based on norm or
-template <typename Dtype, int32_t Length, typename Container>
-bool operator>=(const sipl::VectorBase<Dtype, Length, Container>& lhs,
-                const sipl::VectorBase<Dtype, Length, Container>& rhs)
+template <typename VectorType1, typename VectorType2>
+bool operator>=(const VectorType1& lhs, const VectorType2& rhs)
 {
     return !operator<(lhs, rhs);
 }
 
-// Conver to a string
-template <typename Dtype, int32_t Length, typename Container>
-std::string as_string(const sipl::VectorBase<Dtype, Length, Container>& v)
-{
-    if (v.empty()) {
-        return "[]";
-    }
-    std::string res = "[";
-    for (int32_t i = 1; i < v.size() - 1; ++i) {
-        res += std::to_string(v[i]) + ", ";
-    }
-    res += v[v.size() - 1] + "]";
-    return res;
-}
-
+// Convert to a string
+// XXX Need to properly constrain this template so it's not a catch-all for
+// other operator<<'s.
 template <typename Dtype, int32_t Length, typename Container>
 std::ostream& operator<<(std::ostream& s,
                          const sipl::VectorBase<Dtype, Length, Container>& v)
 {
-    if (v.size() == 0) {
-        return s << "[]";
-    }
-    s << "[";
-    for (int32_t i = 0; i < v.size() - 1; ++i) {
-        s << std::to_string(v[i]) << ", ";
-    }
-    return s << std::to_string(v[v.size() - 1]) << "]";
+    return s << v.str();
 }

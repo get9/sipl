@@ -22,19 +22,22 @@ public:
     {
         this->nelements_(0);
         this->nbytes_(0);
+        this->data_ = StaticArrayWrapper<Dtype, Length>(0);
     }
 
     Vector(Dtype fill_value)
     {
         this->nelements_ = Length;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
     }
 
     Vector(std::initializer_list<Dtype> list)
     {
-        this->nelements_ = Length;
+        this->nelements_ = list.size();
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
         std::copy(std::begin(list), std::end(list), std::begin(this->data_));
     }
 
@@ -42,6 +45,7 @@ public:
     {
         this->nelements_ = Length;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
         std::copy(std::begin(other.data_),
                   std::end(other.data_),
                   std::begin(this->data_));
@@ -53,6 +57,7 @@ public:
         other.nelements_ = 0;
         this->nbytes_ = other.nbytes_;
         other.nbytes_ = 0;
+        other.data_.size_ = 0;
         this->data_ = std::move(other.data_);
     }
 };
@@ -71,6 +76,7 @@ public:
         this->nelements_ = size;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
         this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
+        this->data_.size_ = size;
     }
 
     Vector(int32_t size, Dtype fill_value)
@@ -79,6 +85,7 @@ public:
         this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        this->data_.size_ = size;
     }
 
     Vector(std::initializer_list<Dtype> list)
