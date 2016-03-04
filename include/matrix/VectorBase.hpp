@@ -88,12 +88,12 @@ public:
     // Element accessors
     const Dtype& operator()(const int32_t i) const
     {
-        assert(index >= 0 && index < nelements_ && "out of range");
+        assert(i >= 0 && i < nelements_ && "out of range");
         return data_[i];
     }
     Dtype& operator()(const int32_t i)
     {
-        assert(index >= 0 && index < nelements_ && "out of range");
+        assert(i >= 0 && i < nelements_ && "out of range");
         return data_[i];
     }
 
@@ -129,7 +129,7 @@ public:
     // op-then-store operations
     // XXX revisit for better != 0 comparison
     template <typename T>
-    VectorBase& operator/=(const T scalar)
+    VectorBase& operator/=(T scalar)
     {
         assert(scalar != 0 && "divide by zero error");
         apply([=](Dtype d) { return d / scalar; });
@@ -137,21 +137,21 @@ public:
     }
 
     template <typename T>
-    VectorBase& operator*=(const T scalar)
+    VectorBase& operator*=(T scalar)
     {
         apply([=](Dtype d) { return d * scalar; });
         return *this;
     }
 
     template <typename T>
-    VectorBase& operator+=(const T scalar)
+    VectorBase& operator+=(T scalar)
     {
         apply([=](Dtype d) { return d + scalar; });
         return *this;
     }
 
     template <typename T>
-    VectorBase& operator-=(const T scalar)
+    VectorBase& operator-=(T scalar)
     {
         apply([=](Dtype d) { return d - scalar; });
         return *this;

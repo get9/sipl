@@ -1,0 +1,14 @@
+/*
+ * Main inclusion header for all matrix-related things
+ */
+
+#pragma once
+
+#ifndef SIPL_MATRIX_MATRIX
+#define SIPL_MATRIX_MATRIX
+
+#include "matrix/MatrixBase.hpp"
+#include "matrix/Matrix.hpp"
+#include "matrix/MatrixOps.hpp"
+
+#endif

@@ -19,6 +19,9 @@ int main()
     std::cout << v2 + v2 << std::endl;
     std::cout << v + v2 << std::endl;
     std::cout << std::endl;
+    std::cout << "dynamic - scalar: " << v2 - 1 << std::endl;
+    std::cout << "static - scalar: " << v - 1 << std::endl;
+    std::cout << "static: " << v << std::endl;
 
     std::cout << "Comparison operations" << std::endl;
     std::cout << "operator==: " << (v == v2) << std::endl;

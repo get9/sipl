@@ -20,9 +20,9 @@ class Vector
 public:
     Vector()
     {
-        this->nelements_(0);
-        this->nbytes_(0);
-        this->data_ = StaticArrayWrapper<Dtype, Length>(0);
+        this->nelements_ = 0;
+        this->nbytes_ = 0;
+        this->data_ = StaticArrayWrapper<Dtype, Length>();
     }
 
     Vector(Dtype fill_value)
@@ -54,11 +54,32 @@ public:
     Vector(Vector&& other)
     {
         this->nelements_ = other.nelements_;
-        other.nelements_ = 0;
         this->nbytes_ = other.nbytes_;
-        other.nbytes_ = 0;
-        other.data_.size_ = 0;
         this->data_ = std::move(other.data_);
+    }
+
+    // Copy-assign
+    Vector& operator=(const Vector& other)
+    {
+        if (this != &other) {
+            this->nelements_ = other.nelements_;
+            this->nbytes_ = other.nbytes_;
+            std::copy(std::begin(other.data_),
+                      std::end(other.data_),
+                      std::begin(this->data_));
+        }
+        return *this;
+    }
+
+    // Move-assign
+    Vector& operator=(Vector&& other)
+    {
+        if (this != &other) {
+            this->nelements_ = other.nelements_;
+            this->nbytes_ = other.nbytes_;
+            this->data_ = std::move(other.data_);
+        }
+        return *this;
     }
 };
 
@@ -109,10 +130,32 @@ public:
     Vector(Vector&& other)
     {
         this->nelements_ = other.nelements_;
-        other.nelements_ = 0;
         this->nbytes_ = other.nbytes_;
-        other.nbytes_ = 0;
         this->data_ = std::move(other.data_);
+    }
+
+    // Copy-assign
+    Vector& operator=(const Vector& other)
+    {
+        if (this != &other) {
+            this->nelements_ = other.nelements_;
+            this->nbytes_ = other.nbytes_;
+            std::copy(std::begin(other.data_),
+                      std::end(other.data_),
+                      std::begin(this->data_));
+        }
+        return *this;
+    }
+
+    // Move-assign
+    Vector& operator=(Vector&& other)
+    {
+        if (this != &other) {
+            this->nelements_ = other.nelements_;
+            this->nbytes_ = other.nbytes_;
+            this->data_ = std::move(other.data_);
+        }
+        return *this;
     }
 };
 

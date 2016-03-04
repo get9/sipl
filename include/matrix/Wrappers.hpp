@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef SIPL_MATRIX_WRAPPERS_HPP
-#define SIPL_MATRIX_WRAPPERS_HPP
+#ifndef SIPL_MATRIX_WRAPPERS_H
+#define SIPL_MATRIX_WRAPPERS_H
 
 #include <algorithm>
 
@@ -90,9 +90,12 @@ struct StaticArrayWrapper {
     std::array<Dtype, Length> data_;
     int32_t size_;
 
-    StaticArrayWrapper() : data_(), size_(0) {}
+    StaticArrayWrapper() : data_(), size_(Length) {}
 
-    StaticArrayWrapper(int32_t size) : data_(), size_(size) {}
+    StaticArrayWrapper(int32_t size) : data_(), size_(Length)
+    {
+        assert(size == Length && "size mismatch");
+    }
 
     StaticArrayWrapper(StaticArrayWrapper&& other)
         : data_(std::move(other.data_)), size_(other.size_)
