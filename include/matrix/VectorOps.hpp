@@ -3,44 +3,47 @@
 #ifndef SIPL_MATRIX_VECTOROPS_H
 #define SIPL_MATRIX_VECTOROPS_H
 
-#include "matrix/Vector.hpp"
+#include <iostream>
+
+namespace sipl
+{
 
 // Free-function operations
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator/(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<double, L> operator/(sipl::Vector<T, L> v, Scalar s)
 {
     v /= s;
-    return v;
+    return static_cast<sipl::Vector<T, L>>(v);
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator*(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator*(sipl::Vector<T, L> v, Scalar s)
 {
     v *= s;
     return v;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator*(Scalar v, sipl::Vector<T, L> s)
+sipl::Vector<Scalar, L> operator*(Scalar v, sipl::Vector<T, L> s)
 {
     return v * s;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator+(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator+(sipl::Vector<T, L> v, Scalar s)
 {
     v += s;
     return v;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator+(Scalar v, sipl::Vector<T, L> s)
+sipl::Vector<Scalar, L> operator+(Scalar v, sipl::Vector<T, L> s)
 {
     return v + s;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<T, L> operator-(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator-(sipl::Vector<T, L> v, Scalar s)
 {
     v -= s;
     return v;
@@ -123,11 +126,11 @@ bool operator>=(const sipl::Vector<T1, L1>& lhs,
 // Convert to a string
 // XXX Need to properly constrain this template so it's not a catch-all for
 // other operator<<'s.
-template <typename Dtype, int32_t Length, typename Container>
-std::ostream& operator<<(std::ostream& s,
-                         const sipl::VectorBase<Dtype, Length, Container>& v)
+template <typename Dtype, int32_t Length>
+std::ostream& operator<<(std::ostream& s, const sipl::Vector<Dtype, Length>& v)
 {
     return s << v.str();
+}
 }
 
 #endif

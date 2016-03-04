@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <numeric>
+#include <sstream>
 #include <cstdlib>
 #include <cmath>
 #include <cassert>
+#include "matrix/VectorBase.hpp"
 #include "matrix/Common.hpp"
 
 namespace sipl
@@ -19,6 +21,7 @@ class VectorBase
 public:
     using value_type = Dtype;
 
+    /*
     VectorBase() : nelements_(0), nbytes_(0), data_() {}
 
     VectorBase(int32_t size)
@@ -33,6 +36,18 @@ public:
     {
         std::copy(
             std::begin(other.data_), std::end(other.data_), std::begin(data_));
+    }
+
+    template <typename OtherType>
+    VectorBase(const VectorBase<OtherType, Length, Container>& other)
+        : nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(nelements_)
+    {
+        std::transform(std::begin(other.data_),
+                       std::end(other.data_),
+                       std::begin(data_),
+                       [](auto e) { return Dtype(e); });
     }
 
     VectorBase(VectorBase&& other)
@@ -65,6 +80,75 @@ public:
             other.nelements_ = 0;
             nbytes_ = other.nbytes_;
             other.nbytes_ = 0;
+            data_ = std::move(other.data_);
+        }
+        return *this;
+    }
+    */
+
+    VectorBase() : nelements_(0), nbytes_(0), data_() {}
+
+    VectorBase(int32_t size)
+        : nelements_(size)
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(nelements_)
+    {
+    }
+
+    VectorBase(std::initializer_list<Dtype> list)
+        : nelements_(list.size())
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(nelements_)
+    {
+        std::copy(std::begin(list), std::end(list), std::begin(data_));
+    }
+
+    VectorBase(const VectorBase& other)
+        : nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(other.data_)
+    {
+    }
+
+    VectorBase(VectorBase&& other)
+        : nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(std::move(other.data_))
+    {
+    }
+
+    template <typename OtherType>
+    VectorBase(const VectorBase<OtherType, Length, Container>& v)
+        : nelements_(v.size())
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(nelements_)
+
+    {
+        std::transform(std::begin(v.data()),
+                       std::end(v.data()),
+                       std::begin(data_),
+                       [](auto e) { return Dtype(e); });
+    }
+
+    // Copy-assign
+    VectorBase& operator=(const VectorBase& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            nbytes_ = other.nbytes_;
+            std::copy(std::begin(other.data_),
+                      std::end(other.data_),
+                      std::begin(data_));
+        }
+        return *this;
+    }
+
+    // Move-assign
+    VectorBase& operator=(VectorBase&& other)
+    {
+        if (this != &other) {
+            nelements_ = other.nelements_;
+            nbytes_ = other.nbytes_;
             data_ = std::move(other.data_);
         }
         return *this;
@@ -132,7 +216,7 @@ public:
     VectorBase& operator/=(T scalar)
     {
         assert(scalar != 0 && "divide by zero error");
-        apply([=](Dtype d) { return d / scalar; });
+        apply([=](Dtype d) { return d / double(scalar); });
         return *this;
     }
 
@@ -233,12 +317,25 @@ public:
         if (empty()) {
             return "[]";
         }
-        std::string res = "[";
+        std::stringstream ss;
+        ss << "[";
         for (int32_t i = 0; i < nelements_ - 1; ++i) {
-            res += std::to_string(data_[i]) + ", ";
+            ss << std::to_string(data_[i]) << ", ";
         }
-        res += std::to_string(back()) + "]";
-        return res;
+        ss << std::to_string(back()) << "]";
+        return ss.str();
+    }
+
+    // Conversion operator
+    template <typename T>
+    operator VectorBase<T, Length, Container>() const
+    {
+        return apply_clone([](auto e) { return T(e); });
+    }
+
+    friend std::ostream& operator<<(std::ostream& s, const VectorBase& v)
+    {
+        return s << v.str();
     }
 
 protected:

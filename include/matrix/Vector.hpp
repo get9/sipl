@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <array>
-#include "matrix/VectorBase.hpp"
 #include "matrix/Wrappers.hpp"
+#include "matrix/VectorBase.hpp"
 #include "Constants.hpp"
 
 namespace sipl
@@ -18,6 +18,10 @@ class Vector
     : public VectorBase<Dtype, Length, StaticArrayWrapper<Dtype, Length>>
 {
 public:
+    using BaseClass =
+        VectorBase<Dtype, Length, StaticArrayWrapper<Dtype, Length>>;
+    using BaseClass::BaseClass;
+    /*
     Vector()
     {
         this->nelements_ = 0;
@@ -58,6 +62,18 @@ public:
         this->data_ = std::move(other.data_);
     }
 
+    template <typename OtherType>
+    Vector(const Vector<OtherType, Length>& v)
+    {
+        this->nelements_ = v.size();
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
+        std::transform(std::begin(v.data()),
+                       std::end(v.data()),
+                       std::begin(this->data_),
+                       [](auto e) { return Dtype(e); });
+    }
+
     // Copy-assign
     Vector& operator=(const Vector& other)
     {
@@ -81,14 +97,25 @@ public:
         }
         return *this;
     }
+*/
+    Vector(Dtype fill_value)
+    {
+        this->nelements_ = Length;
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
+        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+    }
 };
 
 // Specialization of the above for dynamically-allocated Vector.
 template <typename Dtype>
 class Vector<Dtype, Dynamic>
-    : public VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype>>
+    : public VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
 {
 public:
+    using BaseClass =
+        VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>;
+    using BaseClass::BaseClass;
     // Need to use 'this' pointer below because templated base class members are
     // not visible in a certain phase of compilation. See here:
     // http://stackoverflow.com/a/6592617
@@ -96,18 +123,19 @@ public:
     {
         this->nelements_ = size;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
+        this->data_ = DynamicArrayWrapper<Dtype, Dynamic>(this->nelements_);
         this->data_.size_ = size;
     }
 
     Vector(int32_t size, Dtype fill_value)
     {
         this->nelements_ = size;
-        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
+        this->data_ = DynamicArrayWrapper<Dtype, Dynamic>(this->nelements_);
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
         this->data_.size_ = size;
     }
+    /*
 
     Vector(std::initializer_list<Dtype> list)
     {
@@ -125,6 +153,19 @@ public:
         std::copy(std::begin(other.data_),
                   std::end(other.data_),
                   std::begin(this->data_));
+    }
+
+    // Convert constructor
+    template <typename OtherType>
+    Vector(const Vector<OtherType, Dynamic>& v)
+    {
+        this->nelements_ = v.size();
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
+        std::transform(std::begin(v),
+                       std::end(v),
+                       std::begin(this->data_),
+                       [](auto e) { return Dtype(e); });
     }
 
     Vector(Vector&& other)
@@ -157,6 +198,7 @@ public:
         }
         return *this;
     }
+    */
 };
 
 // Static vector aliases

@@ -7,7 +7,6 @@
 #ifndef SIPL_MATRIX_VECTOR
 #define SIPL_MATRIX_VECTOR
 
-#include "matrix/VectorBase.hpp"
 #include "matrix/Vector.hpp"
 #include "matrix/VectorOps.hpp"
 
