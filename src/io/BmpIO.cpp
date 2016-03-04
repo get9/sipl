@@ -21,12 +21,12 @@ uint8_t clamp(const double val)
     }
 }
 
-MatrixX<uint8_t> BmpIO::read(const char* filename)
+MatrixXb BmpIO::read(const char* filename)
 {
     return read(std::string(filename));
 }
 
-MatrixX<uint8_t> BmpIO::read(const std::string& filename)
+MatrixXb BmpIO::read(const std::string& filename)
 {
     std::ifstream stream{filename, std::ios::binary};
     if (!stream) {
@@ -51,7 +51,7 @@ MatrixX<uint8_t> BmpIO::read(const std::string& filename)
 
     // Fill the new matrix
     const auto data_offset = file_header->bfOffBits;
-    MatrixX<uint8_t> img(info_header->biHeight, info_header->biWidth);
+    MatrixXb img(info_header->biHeight, info_header->biWidth);
     const auto data_start = buf.get() + data_offset;
 
     // Calculate padded row size
@@ -71,12 +71,12 @@ MatrixX<uint8_t> BmpIO::read(const std::string& filename)
     return img;
 }
 
-void BmpIO::write(const MatrixX<uint8_t>& img, const char* filename)
+void BmpIO::write(const MatrixXb& img, const char* filename)
 {
     write(img, std::string(filename));
 }
 
-void BmpIO::write(const MatrixX<uint8_t>& img, const std::string& filename)
+void BmpIO::write(const MatrixXb& img, const std::string& filename)
 {
     std::ofstream stream{filename, std::ios::binary | std::ios::trunc};
     if (!stream) {

@@ -69,16 +69,9 @@ MatrixX<RgbPixel> PpmIO::read_binary(const std::string& filename)
            "wrong type for matrix");
 
     // Read binary data directly into the Matrix's data buffer
-    MatrixX<RgbPixel> mat{height, width};
+    MatrixX<RgbPixel> mat(height, width);
     for (int32_t i = 0; i < mat.size(); ++i) {
-        uint8_t buf[3];
-        stream.read(reinterpret_cast<char*>(buf), 3);
-
-        // Spell this out explicitly for Windows since it can't deduce the
-        // template for some reason
-        for (int32_t p = 0; p < 3; ++p) {
-            mat[i][p] = buf[p];
-        }
+        stream.read(mat[i].as_bytes(), 3);
     }
     return mat;
 }
@@ -127,8 +120,7 @@ void PpmIO::write_binary(const MatrixX<RgbPixel>& mat,
 
     // Write mat data
     for (int32_t i = 0; i < mat.size(); ++i) {
-        uint8_t buf[] = {mat[i](0), mat[i](1), mat[i](2)};
-        stream.write(reinterpret_cast<const char*>(buf), 3);
+        stream.write(mat[i].as_bytes(), 3);
     }
 }
 

@@ -7,7 +7,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "matrix/Vector"
-#include "matrix/Matrix.hpp"
+#include "matrix/Matrix"
 #include "improc/NearestNeighborInterpolator.hpp"
 #include "improc/BilinearInterpolator.hpp"
 #include "improc/Utility.hpp"
@@ -93,9 +93,9 @@ MatrixX<ElementType> projective_transform(
     return new_image;
 }
 
-MatrixX<uint8_t> color_to_grayscale(const MatrixX<RgbPixel>& color)
+MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
 {
-    MatrixX<uint8_t> grayscale(color.dims[0], color.dims[1]);
+    MatrixXb grayscale(color.dims[0], color.dims[1]);
     for (int32_t i = 0; i < color.dims[0]; ++i) {
         for (int32_t j = 0; j < color.dims[1]; ++j) {
             RgbPixel p = color(i, j);

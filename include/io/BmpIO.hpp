@@ -8,7 +8,7 @@
 #pragma pack(push, 2)
 
 #include <iostream>
-#include "matrix/Matrix.hpp"
+#include "matrix/Matrix"
 #include "io/IOBase.hpp"
 
 namespace sipl
@@ -48,14 +48,14 @@ public:
     };
 
     // Reading
-    static MatrixX<uint8_t> read(const char* filename);
+    static MatrixXb read(const char* filename);
 
-    static MatrixX<uint8_t> read(const std::string& filename);
+    static MatrixXb read(const std::string& filename);
 
     // Writing
-    static void write(const MatrixX<uint8_t>& mat, const char* filename);
+    static void write(const MatrixXb& mat, const char* filename);
 
-    static void write(const MatrixX<uint8_t>& mat, const std::string& filename);
+    static void write(const MatrixXb& mat, const std::string& filename);
 };
 
 inline std::ostream& operator<<(std::ostream& s,

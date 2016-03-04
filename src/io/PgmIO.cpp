@@ -5,12 +5,12 @@
 
 using namespace sipl;
 
-MatrixX<uint8_t> PgmIO::read(const char* filename)
+MatrixXb PgmIO::read(const char* filename)
 {
     return read(std::string(filename));
 }
 
-MatrixX<uint8_t> PgmIO::read(const std::string& filename)
+MatrixXb PgmIO::read(const std::string& filename)
 {
     PgmIO::FileType type = determine_file_type(filename);
     switch (type) {
@@ -24,7 +24,7 @@ MatrixX<uint8_t> PgmIO::read(const std::string& filename)
 }
 
 // char* version
-void PgmIO::write(const MatrixX<uint8_t>& mat,
+void PgmIO::write(const MatrixXb& mat,
                   const char* filename,
                   const FileType type)
 {
@@ -32,7 +32,7 @@ void PgmIO::write(const MatrixX<uint8_t>& mat,
 }
 
 // std::string version
-void PgmIO::write(const MatrixX<uint8_t>& mat,
+void PgmIO::write(const MatrixXb& mat,
                   const std::string& filename,
                   const FileType type)
 {
@@ -49,7 +49,7 @@ void PgmIO::write(const MatrixX<uint8_t>& mat,
 }
 
 // Read a binary file
-MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
+MatrixXb PgmIO::read_binary(const std::string& filename)
 {
     std::ifstream stream{filename, std::ios::binary};
     if (!stream) {
@@ -68,13 +68,13 @@ MatrixX<uint8_t> PgmIO::read_binary(const std::string& filename)
            "wrong type for matrix");
 
     // Read binary data directly into the Matrix's data buffer
-    MatrixX<uint8_t> mat{height, width};
+    MatrixXb mat(height, width);
     stream.read(mat.as_bytes(), int64_t(mat.size_in_bytes()));
     return mat;
 }
 
 // Read an ascii file
-MatrixX<uint8_t> PgmIO::read_ascii(const std::string& filename)
+MatrixXb PgmIO::read_ascii(const std::string& filename)
 {
     std::ifstream stream{filename, std::ios::binary};
     if (!stream) {
@@ -85,7 +85,7 @@ MatrixX<uint8_t> PgmIO::read_ascii(const std::string& filename)
     int32_t height, width, maxval;
     std::tie(height, width, maxval) = process_header(stream);
 
-    MatrixX<uint8_t> mat{height, width};
+    MatrixXb mat(height, width);
     std::string pixval;
     for (int32_t i = 0; i < mat.size(); ++i) {
         stream >> pixval;
@@ -96,8 +96,7 @@ MatrixX<uint8_t> PgmIO::read_ascii(const std::string& filename)
 }
 
 // Write binary file
-void PgmIO::write_binary(const MatrixX<uint8_t>& mat,
-                         const std::string& filename)
+void PgmIO::write_binary(const MatrixXb& mat, const std::string& filename)
 {
     std::ofstream stream{filename, std::ios::binary | std::ios::trunc};
     if (!stream) {
@@ -116,8 +115,7 @@ void PgmIO::write_binary(const MatrixX<uint8_t>& mat,
 }
 
 // Write binary file
-void PgmIO::write_ascii(const MatrixX<uint8_t>& mat,
-                        const std::string& filename)
+void PgmIO::write_ascii(const MatrixXb& mat, const std::string& filename)
 {
     std::ofstream stream{filename, std::ios::trunc | std::ios::binary};
     if (!stream) {
