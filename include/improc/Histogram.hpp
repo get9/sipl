@@ -5,6 +5,8 @@
 
 #include <limits>
 #include <cstdlib>
+#include <iostream>
+#include "matrix/Matrix"
 #include "matrix/Vector"
 #include "improc/Improc.hpp"
 
