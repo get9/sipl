@@ -5,8 +5,9 @@
 
 namespace sipl
 {
-
 enum class NormType { L1, L2, INF };
+
+enum class BorderType { REPLICATE };
 }
 
 #endif
