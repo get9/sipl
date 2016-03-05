@@ -49,12 +49,13 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
 
     // Find first nonzero cdf hist value that will be cdf_min
     uint32_t cdf_min = 0;
-    for (int32_t i = 0; i < cdf_hist.size(); ++i) {
-        if (cdf_hist[i] > 0) {
-            cdf_min = cdf_hist[i];
+    for (const auto bin : cdf_hist) {
+        if (bin > 0) {
+            cdf_min = bin;
             break;
         }
     }
+
     constexpr int32_t max = std::numeric_limits<uint8_t>::max();
     VectorX<uint32_t> equalized_hist(cdf_hist.size());
     for (int32_t i = 0; i < equalized_hist.size(); ++i) {
@@ -85,6 +86,7 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
 
     // Make a rotated histogram by drawing each row as the number of entries in
     // that bin
+    /*
     MatrixX<uint8_t> hist_plot(max_size, max_size);
     for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
         const int32_t count =
@@ -93,8 +95,18 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
             hist_plot(i, j) = (i > count ? max : 0);
         }
     }
+    */
+    MatrixXb hist_plot(max_size, max_size);
+    for (int32_t i = 0; i < hist_plot.dims[0]; ++i) {
+        int32_t count =
+            int32_t(std::round(hist[i] / double(hist.max()) * max_size));
+        for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
+            hist_plot(i, j) = (j < count ? 0 : max);
+        }
+    }
 
-    return hist_plot;
+    return rotate_image(hist_plot, 90, InterpolateType::BILINEAR,
+                        std::numeric_limits<uint8_t>::max());
 }
 
 // Histogram match - return a new matrix (doesn't modify old image)
@@ -127,7 +139,6 @@ MatrixX<Dtype> histogram_match(const MatrixX<Dtype>& target,
             }
         }
     }
-    std::cout << lut << std::endl;
 
     // Alter the histogram of the source image to match target image via the LUT
     MatrixX<Dtype> modified_source(source.dims);

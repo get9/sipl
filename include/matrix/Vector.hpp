@@ -18,92 +18,33 @@ class Vector
     : public VectorBase<Dtype, Length, StaticArrayWrapper<Dtype, Length>>
 {
 public:
-    using BaseClass =
-        VectorBase<Dtype, Length, StaticArrayWrapper<Dtype, Length>>;
+    using ContainerType = StaticArrayWrapper<Dtype, Length>;
+    using BaseClass = VectorBase<Dtype, Length, ContainerType>;
     using BaseClass::BaseClass;
-    /*
+
     Vector()
     {
-        this->nelements_ = 0;
-        this->nbytes_ = 0;
-        this->data_ = StaticArrayWrapper<Dtype, Length>();
+        this->nelements_ = Length;
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->data_ = ContainerType();
     }
 
     Vector(Dtype fill_value)
     {
         this->nelements_ = Length;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
+        this->data_ = ContainerType();
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
-    }
-
-    Vector(std::initializer_list<Dtype> list)
-    {
-        this->nelements_ = list.size();
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
-        std::copy(std::begin(list), std::end(list), std::begin(this->data_));
-    }
-
-    Vector(const Vector& other)
-    {
-        this->nelements_ = Length;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
-        std::copy(std::begin(other.data_),
-                  std::end(other.data_),
-                  std::begin(this->data_));
-    }
-
-    Vector(Vector&& other)
-    {
-        this->nelements_ = other.nelements_;
-        this->nbytes_ = other.nbytes_;
-        this->data_ = std::move(other.data_);
     }
 
     template <typename OtherType>
     Vector(const Vector<OtherType, Length>& v)
     {
         this->nelements_ = v.size();
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
-        std::transform(std::begin(v.data()),
-                       std::end(v.data()),
-                       std::begin(this->data_),
+        this->nbytes_ = v.size_in_bytes();
+        this->data_ = ContainerType();
+        std::transform(std::begin(v), std::end(v), std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
-    }
-
-    // Copy-assign
-    Vector& operator=(const Vector& other)
-    {
-        if (this != &other) {
-            this->nelements_ = other.nelements_;
-            this->nbytes_ = other.nbytes_;
-            std::copy(std::begin(other.data_),
-                      std::end(other.data_),
-                      std::begin(this->data_));
-        }
-        return *this;
-    }
-
-    // Move-assign
-    Vector& operator=(Vector&& other)
-    {
-        if (this != &other) {
-            this->nelements_ = other.nelements_;
-            this->nbytes_ = other.nbytes_;
-            this->data_ = std::move(other.data_);
-        }
-        return *this;
-    }
-*/
-    Vector(Dtype fill_value)
-    {
-        this->nelements_ = Length;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = StaticArrayWrapper<Dtype, Length>(this->nelements_);
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
     }
 };
 
@@ -113,8 +54,8 @@ class Vector<Dtype, Dynamic>
     : public VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
 {
 public:
-    using BaseClass =
-        VectorBase<Dtype, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>;
+    using ContainerType = DynamicArrayWrapper<Dtype, Dynamic>;
+    using BaseClass = VectorBase<Dtype, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
     // Need to use 'this' pointer below because templated base class members are
     // not visible in a certain phase of compilation. See here:
@@ -123,82 +64,26 @@ public:
     {
         this->nelements_ = size;
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = DynamicArrayWrapper<Dtype, Dynamic>(this->nelements_);
-        this->data_.size_ = size;
+        this->data_ = ContainerType(this->nelements_);
     }
 
     Vector(int32_t size, Dtype fill_value)
     {
         this->nelements_ = size;
-        this->data_ = DynamicArrayWrapper<Dtype, Dynamic>(this->nelements_);
+        this->data_ = ContainerType(this->nelements_);
         this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
-        this->data_.size_ = size;
-    }
-    /*
-
-    Vector(std::initializer_list<Dtype> list)
-    {
-        this->nelements_ = list.size();
-        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        std::copy(std::begin(list), std::end(list), std::begin(this->data_));
     }
 
-    Vector(const Vector& other)
-    {
-        this->nelements_ = other.nelements_;
-        this->nbytes_ = other.nbytes_;
-        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
-        std::copy(std::begin(other.data_),
-                  std::end(other.data_),
-                  std::begin(this->data_));
-    }
-
-    // Convert constructor
     template <typename OtherType>
     Vector(const Vector<OtherType, Dynamic>& v)
     {
         this->nelements_ = v.size();
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = DynamicArrayWrapper<Dtype>(this->nelements_);
-        std::transform(std::begin(v),
-                       std::end(v),
-                       std::begin(this->data_),
+        this->nbytes_ = v.size_in_bytes();
+        this->data_ = ContainerType(this->nelements_);
+        std::transform(std::begin(v), std::end(v), std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
     }
-
-    Vector(Vector&& other)
-    {
-        this->nelements_ = other.nelements_;
-        this->nbytes_ = other.nbytes_;
-        this->data_ = std::move(other.data_);
-    }
-
-    // Copy-assign
-    Vector& operator=(const Vector& other)
-    {
-        if (this != &other) {
-            this->nelements_ = other.nelements_;
-            this->nbytes_ = other.nbytes_;
-            std::copy(std::begin(other.data_),
-                      std::end(other.data_),
-                      std::begin(this->data_));
-        }
-        return *this;
-    }
-
-    // Move-assign
-    Vector& operator=(Vector&& other)
-    {
-        if (this != &other) {
-            this->nelements_ = other.nelements_;
-            this->nbytes_ = other.nbytes_;
-            this->data_ = std::move(other.data_);
-        }
-        return *this;
-    }
-    */
 };
 
 // Static vector aliases

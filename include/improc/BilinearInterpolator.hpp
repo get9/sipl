@@ -22,12 +22,12 @@ struct BilinearInterpolator {
         double d_col0, d_row0;
         double xfrac = int32_t(std::modf(x, &d_col0));
         double yfrac = int32_t(std::modf(y, &d_row0));
-        int32_t col0 = int32_t(d_col0);
-        int32_t row0 = int32_t(d_row0);
-        int32_t col1 = (xfrac == 0 ? col0 + 1 : int32_t(std::ceil(x)));
-        int32_t row1 = (yfrac == 0 ? row0 + 1 : int32_t(std::ceil(y)));
+        auto col0 = int32_t(d_col0);
+        auto row0 = int32_t(d_row0);
+        auto col1 = (xfrac == 0 ? col0 + 1 : int32_t(std::ceil(x)));
+        auto row1 = (yfrac == 0 ? row0 + 1 : int32_t(std::ceil(y)));
 
-        // Set to 0 if these are outside the range
+        // Set to fill_value if these are outside the range
         if (row0 < 0 || row0 >= img.dims[0] || col0 < 0 ||
             col0 >= img.dims[1] || row1 < 0 || row1 >= img.dims[0] ||
             col1 < 0 || col1 >= img.dims[1]) {

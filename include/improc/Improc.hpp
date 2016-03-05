@@ -83,8 +83,8 @@ MatrixX<ElementType> projective_transform(
             case InterpolateType::BILINEAR:
                 new_image(i, j) =
                     BilinearInterpolator::interpolate<ElementType,
-                                                      InternalType>(
-                        image, x, y, fill_value);
+                                                      InternalType>(image, x, y,
+                                                                    fill_value);
                 break;
             }
         }
@@ -96,13 +96,10 @@ MatrixX<ElementType> projective_transform(
 MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
 {
     MatrixXb grayscale(color.dims[0], color.dims[1]);
-    for (int32_t i = 0; i < color.dims[0]; ++i) {
-        for (int32_t j = 0; j < color.dims[1]; ++j) {
-            RgbPixel p = color(i, j);
-            grayscale(i, j) = clamp(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
-        }
+    for (int32_t i = 0; i < color.size(); ++i) {
+        RgbPixel p(color[i]);
+        grayscale[i] = clamp(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
     }
-
     return grayscale;
 }
 
@@ -112,13 +109,15 @@ template <typename Dtype>
 MatrixX<Dtype> rotate_image(
     const MatrixX<Dtype>& in_mat,
     double degrees,
-    const InterpolateType type = InterpolateType::BILINEAR)
+    const InterpolateType type = InterpolateType::BILINEAR,
+    const Dtype fill_value = Dtype(0))
 {
     const double rads = degrees / 180.0 * M_PI;
     Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
-    return projective_transform<Dtype, double>(in_mat, rotation_matrix, type);
+    return projective_transform<Dtype, double>(in_mat, rotation_matrix, type,
+                                               fill_value);
 }
 
 // Convolution with arbitrary kernel

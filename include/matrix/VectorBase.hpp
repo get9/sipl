@@ -21,77 +21,12 @@ class VectorBase
 public:
     using value_type = Dtype;
 
-    /*
-    VectorBase() : nelements_(0), nbytes_(0), data_() {}
-
-    VectorBase(int32_t size)
-        : nelements_(size), nbytes_(size * int32_t(sizeof(Dtype))), data_(size)
-    {
-    }
-
-    VectorBase(const VectorBase& other)
-        : nelements_(other.nelements_)
-        , nbytes_(other.nbytes_)
-        , data_(nelements_)
-    {
-        std::copy(
-            std::begin(other.data_), std::end(other.data_), std::begin(data_));
-    }
-
-    template <typename OtherType>
-    VectorBase(const VectorBase<OtherType, Length, Container>& other)
-        : nelements_(other.nelements_)
-        , nbytes_(other.nbytes_)
-        , data_(nelements_)
-    {
-        std::transform(std::begin(other.data_),
-                       std::end(other.data_),
-                       std::begin(data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
-    VectorBase(VectorBase&& other)
-        : nelements_(other.nelements_)
-        , nbytes_(other.nbytes_)
-        , data_(std::move(other.data_))
-    {
-        other.nelements_ = 0;
-        other.nbytes_ = 0;
-    }
-
-    // Copy-assign
-    VectorBase& operator=(const VectorBase& other)
-    {
-        if (this != &other) {
-            nelements_ = other.nelements_;
-            nbytes_ = other.nbytes_;
-            std::copy(std::begin(other.data_),
-                      std::end(other.data_),
-                      std::begin(data_));
-        }
-        return *this;
-    }
-
-    // Move-assign
-    VectorBase& operator=(VectorBase&& other)
-    {
-        if (this != &other) {
-            nelements_ = other.nelements_;
-            other.nelements_ = 0;
-            nbytes_ = other.nbytes_;
-            other.nbytes_ = 0;
-            data_ = std::move(other.data_);
-        }
-        return *this;
-    }
-    */
-
-    VectorBase() : nelements_(0), nbytes_(0), data_() {}
-
-    VectorBase(int32_t size)
-        : nelements_(size)
+    // Need this for default initialization. All derived constructors will call
+    // this, but overwrite the value with something else
+    VectorBase()
+        : nelements_(Length)
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
-        , data_(nelements_)
+        , data_()
     {
     }
 
@@ -117,27 +52,13 @@ public:
     {
     }
 
-    template <typename OtherType>
-    VectorBase(const VectorBase<OtherType, Length, Container>& v)
-        : nelements_(v.size())
-        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
-        , data_(nelements_)
-
-    {
-        std::transform(std::begin(v.data()),
-                       std::end(v.data()),
-                       std::begin(data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
     // Copy-assign
     VectorBase& operator=(const VectorBase& other)
     {
         if (this != &other) {
             nelements_ = other.nelements_;
             nbytes_ = other.nbytes_;
-            std::copy(std::begin(other.data_),
-                      std::end(other.data_),
+            std::copy(std::begin(other.data_), std::end(other.data_),
                       std::begin(data_));
         }
         return *this;
@@ -251,21 +172,8 @@ public:
     template <typename Functor>
     void apply(Functor f)
     {
-        std::transform(
-            std::begin(data_), std::end(data_), std::begin(data_), f);
-    }
-
-    // Apply a functor to each elment returning a new modified vector
-    // XXX Revisit this to figure out if there's a way to name them both the
-    // same thing without the compiler resolving the overload to the non-const
-    // version
-    template <typename Functor>
-    VectorBase apply_clone(Functor f) const
-    {
-        VectorBase new_v(nelements_);
-        std::transform(
-            std::begin(data_), std::end(data_), std::begin(new_v), f);
-        return new_v;
+        std::transform(std::begin(data_), std::end(data_), std::begin(data_),
+                       f);
     }
 
     // Mathematical operations
@@ -274,15 +182,11 @@ public:
         switch (type) {
         case NormType::L1:
             return std::sqrt(std::accumulate(
-                std::begin(data_),
-                std::end(data_),
-                0.0,
+                std::begin(data_), std::end(data_), 0.0,
                 [](double acc, Dtype e) { return acc + std::abs(e); }));
         case NormType::L2:
             return std::sqrt(std::accumulate(
-                std::begin(data_),
-                std::end(data_),
-                0.0,
+                std::begin(data_), std::end(data_), 0.0,
                 [](double acc, Dtype e) { return acc + e * e; }));
         case NormType::INF:
             return max();
@@ -330,7 +234,9 @@ public:
     template <typename T>
     operator VectorBase<T, Length, Container>() const
     {
-        return apply_clone([](auto e) { return T(e); });
+        VectorBase<T, Length, Container> new_v(nelements_);
+        new_v.apply([](auto e) { return T(e); });
+        return new_v;
     }
 
     friend std::ostream& operator<<(std::ostream& s, const VectorBase& v)

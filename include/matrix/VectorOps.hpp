@@ -10,34 +10,37 @@ namespace sipl
 
 // Free-function operations
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<double, L> operator/(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator/(const sipl::Vector<T, L>& v, Scalar s)
 {
-    v /= s;
-    return static_cast<sipl::Vector<T, L>>(v);
+    sipl::Vector<Scalar, L> new_v(v);
+    new_v.apply([s](auto e) { return e / s; });
+    return new_v;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<Scalar, L> operator*(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator*(const sipl::Vector<T, L>& v, Scalar s)
 {
-    v *= s;
-    return v;
+    sipl::Vector<Scalar, L> new_v(v);
+    new_v.apply([s](auto e) { return e * s; });
+    return new_v;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<Scalar, L> operator*(Scalar v, sipl::Vector<T, L> s)
+sipl::Vector<Scalar, L> operator*(Scalar s, const sipl::Vector<T, L>& v)
 {
     return v * s;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<Scalar, L> operator+(sipl::Vector<T, L> v, Scalar s)
+sipl::Vector<Scalar, L> operator+(const sipl::Vector<T, L>& v, Scalar s)
 {
-    v += s;
-    return v;
+    sipl::Vector<Scalar, L> new_v(v);
+    new_v.apply([s](auto e) { return e + s; });
+    return new_v;
 }
 
 template <typename T, int32_t L, typename Scalar>
-sipl::Vector<Scalar, L> operator+(Scalar v, sipl::Vector<T, L> s)
+sipl::Vector<Scalar, L> operator+(Scalar s, const sipl::Vector<T, L>& v)
 {
     return v + s;
 }
@@ -45,8 +48,9 @@ sipl::Vector<Scalar, L> operator+(Scalar v, sipl::Vector<T, L> s)
 template <typename T, int32_t L, typename Scalar>
 sipl::Vector<Scalar, L> operator-(sipl::Vector<T, L> v, Scalar s)
 {
-    v -= s;
-    return v;
+    sipl::Vector<Scalar, L> new_v(v);
+    new_v.apply([s](auto e) { return e - s; });
+    return new_v;
 }
 
 // Operators for vectors of different types

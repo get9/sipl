@@ -3,13 +3,13 @@
 #ifndef SIPL_MATRIX_MATRIXBASE_H
 #define SIPL_MATRIX_MATRIXBASE_H
 
+#include <array>
+#include <sstream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
-#include <array>
-#include <sstream>
 #include "Constants.hpp"
-#include "matrix/VectorOps.hpp"
+#include "matrix/Common.hpp"
 
 namespace sipl
 {
@@ -19,9 +19,32 @@ template <typename Dtype, int32_t Rows, int32_t Cols, typename Container>
 class MatrixBase
 {
 public:
+    // XXX revisit to try and make const?
     std::array<int32_t, 2> dims;
 
-    // Constructors all come from derived classes
+    MatrixBase()
+        : dims({Rows, Cols})
+        , nelements_(Rows * Cols)
+        , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
+        , data_(Rows * Cols)
+    {
+    }
+
+    MatrixBase(const MatrixBase& other)
+        : dims(other.dims)
+        , nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(other.data_)
+    {
+    }
+
+    MatrixBase(MatrixBase&& other)
+        : dims(std::move(other.dims))
+        , nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(std::move(other.data_))
+    {
+    }
 
     // Iterator & element access
     Dtype* begin() { return std::begin(data_); }
@@ -36,13 +59,13 @@ public:
     Dtype& back() { return data_.back(); }
     const Dtype& back() const { return data_.back(); }
 
-    const Dtype& operator()(const int32_t row, const int32_t col) const
+    const Dtype& operator()(int32_t row, int32_t col) const
     {
         assert(row >= 0 && row < dims[0] && "out of range");
         assert(col >= 0 && col < dims[1] && "out of range");
         return data_[row * dims[1] + col];
     }
-    Dtype& operator()(const int32_t row, const int32_t col)
+    Dtype& operator()(int32_t row, int32_t col)
     {
         assert(row >= 0 && row < dims[0] && "out of range");
         assert(col >= 0 && col < dims[1] && "out of range");
@@ -82,60 +105,34 @@ public:
     template <typename Functor>
     void apply(Functor f)
     {
-        std::transform(
-            std::begin(data_), std::end(data_), std::begin(data_), f);
+        std::transform(std::begin(data_), std::end(data_), std::begin(data_),
+                       f);
     }
-
-    // Apply a functor to each elment returning a new modified vector
-    // XXX Revisit this to figure out if there's a way to name them both the
-    // same thing without the compiler resolving the overload to the non-const
-    // version
-    template <typename Functor>
-    MatrixBase apply_clone(Functor f) const
-    {
-        MatrixBase new_v(dims[0], dims[1]);
-        std::transform(
-            std::begin(data_), std::end(data_), std::begin(new_v), f);
-        return new_v;
-    }
-
-    // Cast operator
-    /*
-    template <typename CastType>
-    MatrixBase<CastType, Rows, Cols> as_type() const
-    {
-        MatrixBase<CastType, Rows, Cols> new_mat;
-        for (int32_t i = 0; i < nelements_; ++i) {
-            new_mat[i] = CastType(data_[i]);
-        }
-        return new_mat;
-    }
-    */
 
     // Scalar math manipulation
     template <typename Scalar>
-    MatrixBase& operator/=(Scalar s)
+    MatrixBase<Dtype, Rows, Cols, Container>& operator/=(Scalar s)
     {
         apply([s](Dtype e) { return e / s; });
         return *this;
     }
 
     template <typename Scalar>
-    MatrixBase& operator*=(Scalar s)
+    MatrixBase<Dtype, Rows, Cols, Container>& operator*=(Scalar s)
     {
         apply([s](Dtype e) { return e * s; });
         return *this;
     }
 
     template <typename Scalar>
-    MatrixBase& operator+=(Scalar s)
+    MatrixBase<Dtype, Rows, Cols, Container>& operator+=(Scalar s)
     {
         apply([s](Dtype e) { return e + s; });
         return *this;
     }
 
     template <typename Scalar>
-    MatrixBase& operator-=(Scalar s)
+    MatrixBase<Dtype, Rows, Cols, Container>& operator-=(Scalar s)
     {
         apply([s](Dtype e) { return e - s; });
         return *this;
@@ -158,10 +155,80 @@ public:
         return ss.str();
     }
 
+    Dtype abssum() const
+    {
+        return std::accumulate(
+            std::begin(data_), std::end(data_), Dtype(0),
+            [](Dtype sum, Dtype e) { return sum + std::abs(e); });
+    }
+
+    // Extract a patch centered at (center_y, center_x) with radius ry and
+    // rx. Change boundaries depending on BorderType
+    MatrixBase<Dtype, Dynamic, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
+    patch(int32_t center_y,
+          int32_t center_x,
+          int32_t ry,
+          int32_t rx,
+          const BorderType border_type = BorderType::REPLICATE) const
+    {
+        assert(center_y >= 0 && center_y < dims[0] && "center_y out of bounds");
+        assert(center_x >= 0 && center_x < dims[1] && "center_x out of bounds");
+
+        MatrixBase<Dtype, Dynamic, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
+            patch(2 * ry + 1, 2 * rx + 1);
+        for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
+            for (int32_t x = center_x - rx, c = 0; x <= center_x + rx;
+                 ++x, ++c) {
+                switch (border_type) {
+                case BorderType::REPLICATE:
+                    patch(r, c) =
+                        (*this)(clamp_row_index(y), clamp_col_index(x));
+                }
+            }
+        }
+        return patch;
+    }
+
+    // Conversion operator
+    template <typename T>
+    operator MatrixBase<T, Rows, Cols, Container>() const
+    {
+        MatrixBase<T, Rows, Cols, Container> new_m(dims);
+        new_m.apply([](auto e) { return T(e); });
+        return new_m;
+    }
+
+    friend std::ostream& operator<<(std::ostream& s, const MatrixBase& m)
+    {
+        return s << m.str();
+    }
+
 protected:
     int32_t nelements_;
     int32_t nbytes_;
     Container data_;
+
+    // Helper functions to clamp a row/col index to in-bounds
+    int32_t clamp_row_index(int32_t index) const
+    {
+        if (index < 0) {
+            return 0;
+        } else if (index >= dims[0]) {
+            return dims[0] - 1;
+        } else {
+            return index;
+        }
+    }
+    int32_t clamp_col_index(int32_t index) const
+    {
+        if (index < 0) {
+            return 0;
+        } else if (index >= dims[1]) {
+            return dims[1] - 1;
+        } else {
+            return index;
+        }
+    };
 };
 }
 

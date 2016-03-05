@@ -4,9 +4,12 @@
 #define SIPL_MATRIX_WRAPPERS_H
 
 #include <algorithm>
+#include <cassert>
 
 // Wrapper for Dtype*. Need this so we can use the regular VectorBase calls.
-template <typename Dtype>
+// XXX include extra int32_t type so we can swap this with StaticArrayWrapper
+// freely
+template <typename Dtype, int32_t>
 struct DynamicArrayWrapper {
     Dtype* data_;
     int32_t size_;
@@ -14,6 +17,12 @@ struct DynamicArrayWrapper {
     DynamicArrayWrapper() : data_(nullptr) {}
 
     DynamicArrayWrapper(int32_t size) : data_(new Dtype[size]), size_(size) {}
+
+    DynamicArrayWrapper(const DynamicArrayWrapper& other)
+        : data_(new Dtype[other.size_]), size_(other.size_)
+    {
+        std::copy(std::begin(other), std::end(other), data_);
+    }
 
     DynamicArrayWrapper(DynamicArrayWrapper&& other)
         : data_(std::move(other.data_)), size_(other.size_)
@@ -95,6 +104,12 @@ struct StaticArrayWrapper {
     StaticArrayWrapper(int32_t size) : data_(), size_(Length)
     {
         assert(size == Length && "size mismatch");
+    }
+
+    StaticArrayWrapper(const StaticArrayWrapper& other)
+        : data_(), size_(other.size_)
+    {
+        std::copy(std::begin(other), std::end(other), std::begin(data_));
     }
 
     StaticArrayWrapper(StaticArrayWrapper&& other)

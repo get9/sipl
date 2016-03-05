@@ -3,44 +3,51 @@
 #ifndef SIPL_MATRIX_MATRIXOPS_H
 #define SIPL_MATRIX_MATRIXOPS_H
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator/(sipl::Matrix<T, R, C> m, Scalar s)
+namespace sipl
 {
-    m /= s;
-    return m;
+
+template <typename T, int32_t R, int32_t C, typename Scalar>
+sipl::Matrix<Scalar, R, C> operator/(const sipl::Matrix<T, R, C>& m, Scalar s)
+{
+    sipl::Matrix<Scalar, R, C> new_m(m);
+    new_m.apply([s](auto e) { return e / s; });
+    return new_m;
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator*(sipl::Matrix<T, R, C> m, Scalar s)
+sipl::Matrix<Scalar, R, C> operator*(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    m *= s;
-    return m;
+    sipl::Matrix<Scalar, R, C> new_m(m);
+    new_m.apply([s](auto e) { return e * s; });
+    return new_m;
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator*(Scalar s, sipl::Matrix<T, R, C> m)
+sipl::Matrix<Scalar, R, C> operator*(Scalar s, const sipl::Matrix<T, R, C>& m)
 {
     return m * s;
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator+(sipl::Matrix<T, R, C> m, Scalar s)
+sipl::Matrix<Scalar, R, C> operator+(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    m += s;
-    return m;
+    sipl::Matrix<Scalar, R, C> new_m(m);
+    new_m.apply([s](auto e) { return e + s; });
+    return new_m;
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator+(Scalar s, sipl::Matrix<T, R, C> m)
+sipl::Matrix<Scalar, R, C> operator+(Scalar s, const sipl::Matrix<T, R, C>& m)
 {
     return m + s;
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
-sipl::Matrix<T, R, C> operator-(sipl::Matrix<T, R, C> m, Scalar s)
+sipl::Matrix<Scalar, R, C> operator-(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    m -= s;
-    return m;
+    sipl::Matrix<Scalar, R, C> new_m(m);
+    new_m.apply([s](auto e) { return e - s; });
+    return new_m;
 }
 
 // mat * mat
@@ -59,8 +66,7 @@ operator*(const sipl::Matrix<T1, R1, C1>& m1,
 {
     assert(m1.dims[1] == m2.dims[0] && "matmul size mismatch");
 
-    sipl::Matrix<T1,
-                 (R1 == Dynamic || C2 == Dynamic ? Dynamic : R1),
+    sipl::Matrix<T1, (R1 == Dynamic || C2 == Dynamic ? Dynamic : R1),
                  (R1 == Dynamic || C2 == Dynamic ? Dynamic : C2)>
         mat(m1.dims[0], m2.dims[1]);
     for (int32_t row = 0; row < m1.dims[0]; ++row) {
@@ -111,11 +117,11 @@ bool operator==(const sipl::Matrix<T1, R1, C1>& lhs,
     return true;
 }
 
-template <typename T, int32_t R, int32_t C, typename Container>
-std::ostream& operator<<(std::ostream& s,
-                         const sipl::MatrixBase<T, R, C, Container>& m)
+template <typename T, int32_t R, int32_t C>
+std::ostream& operator<<(std::ostream& s, const sipl::Matrix<T, R, C>& m)
 {
     return s << m.str();
+}
 }
 
 #endif
