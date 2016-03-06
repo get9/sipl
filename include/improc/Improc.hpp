@@ -15,10 +15,8 @@
 namespace sipl
 {
 
-enum class InterpolateType { NEAREST_NEIGHBOR, BILINEAR };
-
 // Specialized inverse for mat33d
-static inline Matrix33d inv(const Matrix33d& m)
+static Matrix33d inv(const Matrix33d& m)
 {
     double determinant = m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) -
                          m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
@@ -35,58 +33,35 @@ static inline Matrix33d inv(const Matrix33d& m)
     return inverse / determinant;
 }
 
-template <typename ElementType, typename InternalType>
+template <typename Interpolator, typename ElementType>
 MatrixX<ElementType> projective_transform(
     const MatrixX<ElementType>& image,
     const Matrix33d& transform,
-    const InterpolateType interpolator,
     const ElementType fill_value = ElementType(0))
 {
     // 1. Figure out sizes of new matrix
-    auto c0 = homogenize(transform * Vector3d{0, 0, 1});
-    auto c1 = homogenize(transform * Vector3d{0, double(image.dims[0]), 1});
-    auto c2 = homogenize(transform * Vector3d{double(image.dims[1]), 0, 1});
-    auto c3 = homogenize(
-        transform * Vector3d{double(image.dims[1]), double(image.dims[0]), 1});
+    auto c0 = homogenize(transform * Vector3d{-0.5, -0.5, 1});
+    auto c1 = homogenize(transform * Vector3d{-0.5, image.dims[0] - 0.5, 1});
+    auto c2 = homogenize(transform * Vector3d{image.dims[1] - 0.5, -0.5, 1});
+    auto c3 = homogenize(transform *
+                         Vector3d{image.dims[1] - 0.5, image.dims[0] - 0.5, 1});
 
     // Raise or lower values as needed
-    c0.apply([](auto d) { return std::round(d); });
-    c1.apply([](auto d) { return std::round(d); });
-    c2.apply([](auto d) { return std::round(d); });
-    c3.apply([](auto d) { return std::round(d); });
-
-    int32_t ymin = int32_t(std::min({c0[1], c1[1], c2[1], c3[1]}));
-    int32_t ymax = int32_t(std::max({c0[1], c1[1], c2[1], c3[1]}));
-    int32_t xmin = int32_t(std::min({c0[0], c1[0], c2[0], c3[0]}));
-    int32_t xmax = int32_t(std::max({c0[0], c1[0], c2[0], c3[0]}));
+    auto xs = Vector4d{c0[0], c1[0], c2[0], c3[0]};
+    auto ys = Vector4d{c0[1], c1[1], c2[1], c3[1]};
 
     // Create new matrix
     Matrix33d inverse = inv(transform);
-    MatrixX<ElementType> new_image(ymax - ymin, xmax - xmin);
+    MatrixX<ElementType> new_image(int32_t(ys.max() - ys.min()),
+                                   int32_t(xs.max() - xs.min()));
 
-    // Start filling it
+    // Do interpolation for each output pixel
+    Interpolator interp;
     for (int32_t i = 0; i < new_image.dims[0]; ++i) {
         for (int32_t j = 0; j < new_image.dims[1]; ++j) {
-            Vector3d uv{double(j + xmin), double(i + ymin), 1};
+            Vector3d uv{j + xs.min(), i + ys.min(), 1};
             Vector3d xy = homogenize(inverse * uv);
-            const double x = xy[0];
-            const double y = xy[1];
-
-            // Need to interpolate
-            switch (interpolator) {
-            case InterpolateType::NEAREST_NEIGHBOR:
-                new_image(i, j) =
-                    NearestNeighborInterpolator::interpolate<ElementType,
-                                                             InternalType>(
-                        image, x, y, fill_value);
-                break;
-            case InterpolateType::BILINEAR:
-                new_image(i, j) =
-                    BilinearInterpolator::interpolate<ElementType,
-                                                      InternalType>(image, x, y,
-                                                                    fill_value);
-                break;
-            }
+            new_image(i, j) = interp(image, xy[0], xy[1], fill_value);
         }
     }
 
@@ -105,19 +80,17 @@ MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
 
 // XXX only works for integral-typed matrices for now, need to figure out how to
 // get it to work for Vector-type matrices
-template <typename Dtype>
-MatrixX<Dtype> rotate_image(
-    const MatrixX<Dtype>& in_mat,
-    double degrees,
-    const InterpolateType type = InterpolateType::BILINEAR,
-    const Dtype fill_value = Dtype(0))
+template <typename Dtype, typename Interpolator>
+MatrixX<Dtype> rotate_image(const MatrixX<Dtype>& in_mat,
+                            double degrees,
+                            const Dtype fill_value = Dtype(0))
 {
     const double rads = degrees / 180.0 * M_PI;
     Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
-    return projective_transform<Dtype, double>(in_mat, rotation_matrix, type,
-                                               fill_value);
+    return projective_transform<Dtype, Interpolator>(in_mat, rotation_matrix,
+                                                     fill_value);
 }
 
 // Convolution with arbitrary kernel

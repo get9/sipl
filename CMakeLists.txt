@@ -18,6 +18,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(-Wno-padded)
     add_compile_options(-Wno-sign-conversion)
     add_compile_options(-Wno-c++11-narrowing)
+    add_compile_options(-Wimplicit-fallthrough)
     add_compile_options(-Werror)
 endif()
 
@@ -38,8 +39,8 @@ set(SIPL_SOURCES
     src/io/BmpIO.cpp
 )
 
-add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
-add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
+#add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
+#add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
 add_executable(HW1 test.cpp "${SIPL_SOURCES}")
 #add_executable(vectortest vector_test.cpp)# "${SIPL_SOURCES}")
 #add_executable(matrixtest matrix_test.cpp)# "${SIPL_SOURCES}")

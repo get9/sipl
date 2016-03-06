@@ -81,7 +81,7 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
 // For now, only writes out 256x256 histogram image
 MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
 {
-    constexpr int32_t max = int32_t(std::numeric_limits<uint8_t>::max());
+    constexpr auto max = int32_t(std::numeric_limits<uint8_t>::max());
     constexpr int32_t max_size = max + 1;
 
     // Make a rotated histogram by drawing each row as the number of entries in
@@ -105,8 +105,7 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
         }
     }
 
-    return rotate_image(hist_plot, 90, InterpolateType::BILINEAR,
-                        std::numeric_limits<uint8_t>::max());
+    return rotate_image<BilinearInterpolator<double>>(hist_plot, 90, max);
 }
 
 // Histogram match - return a new matrix (doesn't modify old image)

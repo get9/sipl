@@ -10,27 +10,26 @@
 namespace sipl
 {
 
+// Available kinds of interpolators
+enum class InterpolateType { BILINEAR, NEAREST_NEIGHBOR, UNKNOWN };
+
 // Clamp a value to min/max values
-uint8_t clamp(const double val)
+uint8_t clamp(double val)
 {
     const auto min = std::numeric_limits<uint8_t>::min();
     const auto max = std::numeric_limits<uint8_t>::max();
-    if (val >= max) {
+    if (val > max) {
         return max;
-    } else if (val <= min) {
+    } else if (val < min) {
         return min;
     } else {
         return uint8_t(std::round(val));
     }
 }
 
-RgbPixel clamp(const Vector3d& in_vec)
+RgbPixel clamp(const Vector3d& v)
 {
-    RgbPixel out_vec;
-    out_vec[0] = clamp(in_vec[0]);
-    out_vec[1] = clamp(in_vec[1]);
-    out_vec[2] = clamp(in_vec[2]);
-    return out_vec;
+    return {clamp(v[0]), clamp(v[1]), clamp(v[2])};
 }
 
 template <typename T>

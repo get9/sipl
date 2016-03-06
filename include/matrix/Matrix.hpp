@@ -22,6 +22,7 @@ class Matrix : public MatrixBase<Dtype,
                                  StaticArrayWrapper<Dtype, Rows * Cols>>
 {
 public:
+    using fp_type = double;
     using ContainerType = StaticArrayWrapper<Dtype, Rows * Cols>;
     using BaseClass = MatrixBase<Dtype, Rows, Cols, ContainerType>;
     using BaseClass::BaseClass;
@@ -84,6 +85,7 @@ class Matrix<Dtype, Dynamic, Dynamic>
                         DynamicArrayWrapper<Dtype, Dynamic>>
 {
 public:
+    using fp_type = double;
     using ContainerType = DynamicArrayWrapper<Dtype, Dynamic>;
     using BaseClass = MatrixBase<Dtype, Dynamic, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
@@ -145,6 +147,33 @@ public:
                        std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
     }
+
+    // Extract a patch centered at (center_y, center_x) with radius ry and
+    // rx. Change boundaries depending on BorderType
+    Matrix patch(int32_t center_y,
+                 int32_t center_x,
+                 int32_t ry,
+                 int32_t rx,
+                 const BorderType border_type = BorderType::REPLICATE) const
+    {
+        assert(center_y >= 0 && center_y < this->dims[0] &&
+               "center_y out of bounds");
+        assert(center_x >= 0 && center_x < this->dims[1] &&
+               "center_x out of bounds");
+
+        Matrix patch(2 * ry + 1, 2 * rx + 1);
+        for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
+            for (int32_t x = center_x - rx, c = 0; x <= center_x + rx;
+                 ++x, ++c) {
+                switch (border_type) {
+                case BorderType::REPLICATE:
+                    patch(r, c) = (*this)(this->clamp_row_index(y),
+                                          this->clamp_col_index(x));
+                }
+            }
+        }
+        return patch;
+    }
 };
 
 // Specialization of the above for dynamically-allocated Matrix with Vector
@@ -159,6 +188,7 @@ class Matrix<Vector<Dtype, Length>, Dynamic, Dynamic>
 {
 public:
     using value_type = Vector<Dtype, Length>;
+    using fp_type = Vector<double, Length>;
     using ContainerType = DynamicArrayWrapper<value_type, Length>;
     // XXX Might not let me do this...
     using BaseClass = MatrixBase<value_type, Dynamic, Dynamic, ContainerType>;
@@ -192,6 +222,33 @@ public:
         std::transform(std::begin(other), std::end(other),
                        std::begin(this->data_),
                        [](auto e) { return value_type(e); });
+    }
+
+    // Extract a patch centered at (center_y, center_x) with radius ry and
+    // rx. Change boundaries depending on BorderType
+    Matrix patch(int32_t center_y,
+                 int32_t center_x,
+                 int32_t ry,
+                 int32_t rx,
+                 const BorderType border_type = BorderType::REPLICATE) const
+    {
+        assert(center_y >= 0 && center_y < this->dims[0] &&
+               "center_y out of bounds");
+        assert(center_x >= 0 && center_x < this->dims[1] &&
+               "center_x out of bounds");
+
+        Matrix patch(2 * ry + 1, 2 * rx + 1);
+        for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
+            for (int32_t x = center_x - rx, c = 0; x <= center_x + rx;
+                 ++x, ++c) {
+                switch (border_type) {
+                case BorderType::REPLICATE:
+                    patch(r, c) = (*this)(this->clamp_row_index(y),
+                                          this->clamp_col_index(x));
+                }
+            }
+        }
+        return patch;
     }
 };
 

@@ -162,33 +162,6 @@ public:
             [](Dtype sum, Dtype e) { return sum + std::abs(e); });
     }
 
-    // Extract a patch centered at (center_y, center_x) with radius ry and
-    // rx. Change boundaries depending on BorderType
-    MatrixBase<Dtype, Dynamic, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
-    patch(int32_t center_y,
-          int32_t center_x,
-          int32_t ry,
-          int32_t rx,
-          const BorderType border_type = BorderType::REPLICATE) const
-    {
-        assert(center_y >= 0 && center_y < dims[0] && "center_y out of bounds");
-        assert(center_x >= 0 && center_x < dims[1] && "center_x out of bounds");
-
-        MatrixBase<Dtype, Dynamic, Dynamic, DynamicArrayWrapper<Dtype, Dynamic>>
-            patch(2 * ry + 1, 2 * rx + 1);
-        for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
-            for (int32_t x = center_x - rx, c = 0; x <= center_x + rx;
-                 ++x, ++c) {
-                switch (border_type) {
-                case BorderType::REPLICATE:
-                    patch(r, c) =
-                        (*this)(clamp_row_index(y), clamp_col_index(x));
-                }
-            }
-        }
-        return patch;
-    }
-
     // Conversion operator
     template <typename T>
     operator MatrixBase<T, Rows, Cols, Container>() const

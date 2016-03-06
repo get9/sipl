@@ -95,6 +95,12 @@ using Vector3f = Vector3<float>;
 using Vector3i = Vector3<int32_t>;
 using RgbPixel = Vector3b;
 
+template <typename Dtype>
+using Vector4 = Vector<Dtype, 4>;
+using Vector4d = Vector4<double>;
+using Vector4i = Vector4<int32_t>;
+using Vector4b = Vector4<uint8_t>;
+
 // Dynamic vector aliases
 template <typename Dtype>
 using VectorX = Vector<Dtype, Dynamic>;

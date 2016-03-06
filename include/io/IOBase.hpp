@@ -6,6 +6,9 @@
 namespace sipl
 {
 
+// Current supported file types
+enum class FileType { PGM, PPM, BMP, UNKNOWN };
+
 // From: http://stackoverflow.com/a/8152888
 class IOException : public std::exception
 {

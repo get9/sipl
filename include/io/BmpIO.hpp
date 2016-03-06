@@ -79,8 +79,8 @@ inline std::ostream& operator<<(std::ostream& s,
                                 const BmpIO::BITMAPFILEHEADER& h)
 {
     const auto bfType = h.bfType;
-    char type[] = {
-        static_cast<char>(bfType), static_cast<char>(bfType >> 8), '\0'};
+    char type[] = {static_cast<char>(bfType), static_cast<char>(bfType >> 8),
+                   '\0'};
     s << "bfType:          " << type << std::endl;
     s << "bfSize:          " << h.bfSize << std::endl;
     s << "bfReserved1:     " << h.bfReserved1 << std::endl;
