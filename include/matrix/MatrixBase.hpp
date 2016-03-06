@@ -201,7 +201,7 @@ protected:
         } else {
             return index;
         }
-    };
+    }
 };
 }
 

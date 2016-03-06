@@ -8,13 +8,13 @@
 using namespace sipl;
 
 // Clamp a value to min/max values
-uint8_t clamp(const double val)
+uint8_t clamp(double val)
 {
     const auto min = std::numeric_limits<uint8_t>::min();
     const auto max = std::numeric_limits<uint8_t>::max();
-    if (val >= max) {
+    if (val > max) {
         return max;
-    } else if (val <= min) {
+    } else if (val < min) {
         return min;
     } else {
         return uint8_t(std::round(val));
@@ -93,9 +93,10 @@ void BmpIO::write(const MatrixXb& img, const std::string& filename)
     const int32_t color_table_size = (1 << 8) * 4;
     uint8_t color_table[color_table_size];
     for (int32_t i = 0; i < (1 << 8); ++i) {
-        color_table[i * 4 + 0] = i;
-        color_table[i * 4 + 1] = i;
-        color_table[i * 4 + 2] = i;
+        auto val = uint8_t(i);
+        color_table[i * 4 + 0] = val;
+        color_table[i * 4 + 1] = val;
+        color_table[i * 4 + 2] = val;
         color_table[i * 4 + 3] = 0;
     }
 

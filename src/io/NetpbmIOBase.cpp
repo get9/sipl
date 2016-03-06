@@ -35,7 +35,7 @@ std::tuple<int32_t, int32_t, int32_t> NetpbmIOBase::process_header(
         stream >> word;
     }
 
-    int32_t maxval = std::stoul(word);
+    auto maxval = int32_t(std::stoul(word));
 
     return std::make_tuple(image_height, image_width, maxval);
 }
