@@ -133,11 +133,11 @@ struct StaticArrayWrapper {
         return *this;
     }
 
-    Dtype* begin() { return data_.begin(); }
-    const Dtype* begin() const { return data_.begin(); }
+    Dtype* begin() { return data_.data(); }
+    const Dtype* begin() const { return data_.data(); }
 
-    Dtype* end() { return data_.end(); }
-    const Dtype* end() const { return data_.end(); }
+    Dtype* end() { return begin() + size_; }
+    const Dtype* end() const { return begin() + size_; }
 
     int32_t size() const { return size_; }
 
