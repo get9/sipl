@@ -9,17 +9,13 @@ namespace sipl
 template <typename T, int32_t R, int32_t C, typename Scalar>
 sipl::Matrix<Scalar, R, C> operator/(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    sipl::Matrix<Scalar, R, C> new_m(m);
-    new_m.apply([s](auto e) { return e / s; });
-    return new_m;
+    return m.apply([s](auto e) { return Scalar(e / s); });
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
 sipl::Matrix<Scalar, R, C> operator*(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    sipl::Matrix<Scalar, R, C> new_m(m);
-    new_m.apply([s](auto e) { return e * s; });
-    return new_m;
+    return m.apply([s](auto e) { return Scalar(e * s); });
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
@@ -31,9 +27,7 @@ sipl::Matrix<Scalar, R, C> operator*(Scalar s, const sipl::Matrix<T, R, C>& m)
 template <typename T, int32_t R, int32_t C, typename Scalar>
 sipl::Matrix<Scalar, R, C> operator+(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    sipl::Matrix<Scalar, R, C> new_m(m);
-    new_m.apply([s](auto e) { return e + s; });
-    return new_m;
+    return m.apply([s](auto e) { return Scalar(e + s); });
 }
 
 template <typename T, int32_t R, int32_t C, typename Scalar>
@@ -56,9 +50,7 @@ sipl::Matrix<T, R, C> operator+(const sipl::Matrix<T, R, C>& m1,
 template <typename T, int32_t R, int32_t C, typename Scalar>
 sipl::Matrix<Scalar, R, C> operator-(const sipl::Matrix<T, R, C>& m, Scalar s)
 {
-    sipl::Matrix<Scalar, R, C> new_m(m);
-    new_m.apply([s](auto e) { return e - s; });
-    return new_m;
+    return m.apply([s](auto e) { return Scalar(e - s); });
 }
 
 // mat * mat

@@ -4,6 +4,7 @@
 #define SIPL_MATRIX_VECTOR_H
 
 #include <algorithm>
+#include <functional>
 #include <array>
 #include "matrix/Wrappers.hpp"
 #include "matrix/VectorBase.hpp"
@@ -46,6 +47,31 @@ public:
         std::transform(std::begin(v), std::end(v), std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
     }
+
+    template <typename OtherType>
+    Vector<OtherType, Length> as_type() const
+    {
+        const auto tmp = (*this) / double(this->max());
+        const auto max = std::numeric_limits<OtherType>::max();
+        return tmp.apply(
+            [max](auto e) { return OtherType(std::round(e * max)); });
+    }
+
+    void transform(std::function<Dtype(Dtype)> f)
+    {
+        std::transform(this->begin(), this->end(), this->begin(), f);
+    }
+
+    // Template magic from: http://stackoverflow.com/a/26383814
+    template <
+        typename Functor,
+        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
+    decltype(auto) apply(Functor f) const
+    {
+        Vector<OutputType, Length> new_m(this->nelements_);
+        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
+    }
 };
 
 // Specialization of the above for dynamically-allocated Vector.
@@ -83,6 +109,31 @@ public:
         this->data_ = ContainerType(this->nelements_);
         std::transform(std::begin(v), std::end(v), std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
+    }
+
+    template <typename OtherType>
+    Vector<OtherType, Dynamic> as_type() const
+    {
+        const auto tmp = (*this) / double(this->max());
+        const auto max = std::numeric_limits<OtherType>::max();
+        return tmp.apply(
+            [max](auto e) { return OtherType(std::round(e * max)); });
+    }
+
+    void transform(std::function<Dtype(Dtype)> f)
+    {
+        std::transform(this->begin(), this->end(), this->begin(), f);
+    }
+
+    // Template magic from: http://stackoverflow.com/a/26383814
+    template <
+        typename Functor,
+        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
+    decltype(auto) apply(Functor f) const
+    {
+        Vector<OutputType, Dynamic> new_m(this->nelements_);
+        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
     }
 };
 

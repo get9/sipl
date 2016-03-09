@@ -23,7 +23,6 @@ class Matrix : public MatrixBase<Dtype,
                                  StaticArrayWrapper<Dtype, Rows * Cols>>
 {
 public:
-    using fp_type = double;
     using ContainerType = StaticArrayWrapper<Dtype, Rows * Cols>;
     using BaseClass = MatrixBase<Dtype, Rows, Cols, ContainerType>;
     using BaseClass::BaseClass;
@@ -77,27 +76,27 @@ public:
     }
 
     template <typename OtherType>
-    Matrix as_type() const
+    Matrix<OtherType, Rows, Cols> as_type() const
     {
+        const auto max = std::numeric_limits<OtherType>::max();
         const auto tmp = (*this) / double(this->max());
-        Matrix new_m;
-        for (int32_t i = 0; i < this->nelements_; ++i) {
-            new_m[i] = OtherType(
-                std::round(tmp[i] * std::numeric_limits<OtherType>::max()));
-        }
-        return new_m;
+        return tmp.apply(
+            [max](auto e) { return OtherType(std::round(e * max)); });
     }
 
     template <typename Functor>
-    void apply(Functor f)
+    void transform(Functor f)
     {
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
-    template <typename Functor>
-    Matrix apply(Functor f) const
+    // Template magic from: http://stackoverflow.com/a/26383814
+    template <
+        typename Functor,
+        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
+    decltype(auto) apply(Functor f) const
     {
-        Matrix new_m;
+        Matrix<OutputType, Rows, Cols> new_m;
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
         return new_m;
     }
@@ -112,7 +111,6 @@ class Matrix<Dtype, Dynamic, Dynamic>
                         DynamicArrayWrapper<Dtype, Dynamic>>
 {
 public:
-    using fp_type = double;
     using ContainerType = DynamicArrayWrapper<Dtype, Dynamic>;
     using BaseClass = MatrixBase<Dtype, Dynamic, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
@@ -205,13 +203,10 @@ public:
     template <typename OtherType>
     Matrix<OtherType, Dynamic, Dynamic> as_type() const
     {
-        const auto tmp = (*this) / double(this->max());
-        Matrix<OtherType, Dynamic, Dynamic> new_m(this->dims);
-        for (int32_t i = 0; i < this->nelements_; ++i) {
-            new_m[i] = OtherType(
-                std::round(tmp[i] * std::numeric_limits<OtherType>::max()));
-        }
-        return new_m;
+        const auto max = std::numeric_limits<OtherType>::max();
+        const auto tmp = (*this) / this->max();
+        return tmp.apply(
+            [max](auto e) { return OtherType(std::round(e * max)); });
     }
 
     template <typename Functor>
@@ -220,10 +215,13 @@ public:
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
-    template <typename Functor>
-    Matrix apply(Functor f) const
+    // Template magic from: http://stackoverflow.com/a/26383814
+    template <
+        typename Functor,
+        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
+    decltype(auto) apply(Functor f) const
     {
-        Matrix new_m(this->dims);
+        Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
         return new_m;
     }
@@ -241,11 +239,17 @@ class Matrix<Vector<Dtype, Length>, Dynamic, Dynamic>
 {
 public:
     using value_type = Vector<Dtype, Length>;
-    using fp_type = Vector<double, Length>;
     using ContainerType = DynamicArrayWrapper<value_type, Length>;
-    // XXX Might not let me do this...
     using BaseClass = MatrixBase<value_type, Dynamic, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
+
+    Matrix(std::array<int32_t, 2> dims)
+    {
+        this->nelements_ = dims[0] * dims[1];
+        this->data_ = ContainerType(this->nelements_);
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->dims = dims;
+    }
 
     Matrix(int32_t rows, int32_t cols)
     {
@@ -305,15 +309,18 @@ public:
     }
 
     template <typename Functor>
-    void apply(Functor f)
+    void transform(Functor f)
     {
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
-    template <typename Functor>
-    Matrix apply(Functor f) const
+    // Template magic from: http://stackoverflow.com/a/26383814
+    template <
+        typename Functor,
+        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
+    decltype(auto) apply(Functor f) const
     {
-        Matrix new_m(this->dims);
+        Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
         return new_m;
     }
