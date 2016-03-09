@@ -27,27 +27,13 @@ T clamp(double val)
     }
 }
 
+// Overload for double vals so they don't get rounded
 double clamp(double val) { return val; }
 
-// Clamp a value to min/max values
-/*
-uint8_t clamp(double val)
-{
-    const auto min = std::numeric_limits<uint8_t>::min();
-    const auto max = std::numeric_limits<uint8_t>::max();
-    if (val > max) {
-        return max;
-    } else if (val < min) {
-        return min;
-    } else {
-        return uint8_t(std::round(val));
-    }
-}
-*/
-
+// Overload for Vector3d types
 RgbPixel clamp(const Vector3d& v)
 {
-    return {clamp(v[0]), clamp(v[1]), clamp(v[2])};
+    return v.apply([](auto e) { return clamp(e); });
 }
 
 template <typename T>
