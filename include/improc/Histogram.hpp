@@ -105,7 +105,9 @@ MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
         }
     }
 
-    return rotate_image<BilinearInterpolator<double>>(hist_plot, 90, max);
+    // Rotate +90 degrees
+    using Interpolator = BilinearInterpolator<double>;
+    return rotate_image<uint8_t, Interpolator>(hist_plot, 90, max);
 }
 
 // Histogram match - return a new matrix (doesn't modify old image)
