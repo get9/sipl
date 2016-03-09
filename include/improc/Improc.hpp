@@ -16,7 +16,7 @@ namespace sipl
 {
 
 // Specialized inverse for mat33d
-static Matrix33d inv(const Matrix33d& m)
+inline static Matrix33d inv(const Matrix33d& m)
 {
     double determinant = m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) -
                          m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
@@ -95,13 +95,14 @@ MatrixX<Dtype> rotate_image(const MatrixX<Dtype>& in_mat,
 
 // Convolution with arbitrary kernel
 // XXX Only works with gray-valued images at this time
-template <typename Dtype>
-MatrixX<Dtype> convolve(const MatrixX<Dtype>& img, const MatrixXd& kernel)
+template <typename OutputType, typename InputType, int32_t Rows, int32_t Cols>
+MatrixX<OutputType> convolve(const MatrixX<InputType>& img,
+                             const Matrix<double, Rows, Cols>& kernel)
 {
     assert(kernel.dims[0] % 2 == 1 && kernel.dims[1] % 2 == 1 &&
            "kernel must have odd # rows and cols");
 
-    MatrixX<Dtype> conv_out(img.dims);
+    MatrixX<OutputType> conv_out(img.dims);
     for (int32_t i = 0; i < img.dims[0]; ++i) {
         for (int32_t j = 0; j < img.dims[1]; ++j) {
             const auto patch =
@@ -118,7 +119,7 @@ MatrixX<Dtype> convolve(const MatrixX<Dtype>& img, const MatrixXd& kernel)
             }
 
             // Assign to new matrix position
-            conv_out(i, j) = clamp(sum);
+            conv_out(i, j) = clamp<OutputType>(sum);
         }
     }
 
@@ -141,12 +142,25 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
     for (int32_t i = 0; i < img.dims[0]; ++i) {
         for (int32_t j = 0; j < img.dims[1]; ++j) {
             auto patch = img.patch(i, j, height / 2, width / 2);
-            std::sort(patch.data(), patch.data() + patch.size());
+            std::sort(std::begin(patch), std::end(patch));
             result(i, j) = patch[k];
         }
     }
 
     return result;
+}
+
+// Threshold in-place
+template <typename Dtype>
+MatrixX<Dtype> threshold(const MatrixX<Dtype>& img, int32_t threshold)
+{
+    constexpr auto min = std::numeric_limits<Dtype>::min();
+    constexpr auto max = std::numeric_limits<Dtype>::max();
+    MatrixX<Dtype> thresh(img.dims);
+    for (int32_t i = 0; i < img.size(); ++i) {
+        thresh[i] = (img[i] <= threshold ? min : max);
+    }
+    return thresh;
 }
 }
 
