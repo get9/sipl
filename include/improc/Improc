@@ -1,0 +1,13 @@
+/*
+ * Main inclusion header for all improc-related things
+ */
+
+#pragma once
+
+#ifndef SIPL_IMPROC_IMPROC
+#define SIPL_IMPROC_IMPROC
+
+#include "improc/Improc.hpp"
+#include "improc/Kernels.hpp"
+
+#endif
