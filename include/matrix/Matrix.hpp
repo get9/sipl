@@ -84,17 +84,17 @@ public:
             [max](auto e) { return OtherType(std::round(e * max)); });
     }
 
-    template <typename Functor>
-    void transform(Functor f)
+    template <typename UnaryFunctor>
+    void transform(UnaryFunctor f)
     {
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
-    template <
-        typename Functor,
-        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
-    decltype(auto) apply(Functor f) const
+    template <typename UnaryFunctor,
+              typename OutputType =
+                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+    decltype(auto) apply(UnaryFunctor f) const
     {
         Matrix<OutputType, Rows, Cols> new_m;
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
@@ -209,17 +209,17 @@ public:
             [max](auto e) { return OtherType(std::round(e * max)); });
     }
 
-    template <typename Functor>
-    void transform(Functor f)
+    template <typename UnaryFunctor>
+    void transform(UnaryFunctor f)
     {
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
-    template <
-        typename Functor,
-        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
-    decltype(auto) apply(Functor f) const
+    template <typename UnaryFunctor,
+              typename OutputType =
+                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+    decltype(auto) apply(UnaryFunctor f) const
     {
         Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
@@ -308,17 +308,17 @@ public:
         return patch;
     }
 
-    template <typename Functor>
-    void transform(Functor f)
+    template <typename UnaryFunctor>
+    void transform(UnaryFunctor f)
     {
         std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
-    template <
-        typename Functor,
-        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
-    decltype(auto) apply(Functor f) const
+    template <typename UnaryFunctor,
+              typename OutputType =
+                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+    decltype(auto) apply(UnaryFunctor f) const
     {
         Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
