@@ -89,8 +89,8 @@ MatrixX<Dtype> rotate_image(const MatrixX<Dtype>& in_mat,
     Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
-    return projective_transform<Dtype, Interpolator>(in_mat, rotation_matrix,
-                                                     fill_value);
+    return projective_transform<Interpolator>(in_mat, rotation_matrix,
+                                              fill_value);
 }
 
 // Convolution with arbitrary kernel
@@ -119,7 +119,7 @@ MatrixX<OutputType> convolve(const MatrixX<InputType>& img,
             }
 
             // Assign to new matrix position
-            conv_out(i, j) = clamp<OutputType>(sum);
+            conv_out(i, j) = clamp(sum);
         }
     }
 
@@ -154,8 +154,8 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
 template <typename Dtype>
 MatrixX<Dtype> threshold(const MatrixX<Dtype>& img, int32_t threshold)
 {
-    constexpr auto min = std::numeric_limits<Dtype>::min();
-    constexpr auto max = std::numeric_limits<Dtype>::max();
+    const auto min = std::numeric_limits<Dtype>::min();
+    const auto max = std::numeric_limits<Dtype>::max();
     MatrixX<Dtype> thresh(img.dims);
     for (int32_t i = 0; i < img.size(); ++i) {
         thresh[i] = (img[i] <= threshold ? min : max);

@@ -14,9 +14,9 @@ namespace Kernels {
                                   {-2, 0, 2},
                                   {-1, 0, 1}};
 
-    static const Matrix33d SobelY{{ 1,  2,  1},
+    static const Matrix33d SobelY{{-1, -2, -1},
                                   { 0,  0,  0},
-                                  {-1, -2, -1}};
+                                  { 1,  2,  1}};
 
     static const Matrix33d PrewittX{{-1, 0, 1},
                                     {-1, 0, 1},

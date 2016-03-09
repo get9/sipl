@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <cstring>
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix"
 #include "improc/Improc"
@@ -41,12 +42,14 @@ int main(int argc, char** argv)
     switch (g_action) {
     case ActionType::SOBEL: {
         auto abs_f = [](auto e) { return std::abs(e); };
+        // auto square = [](auto e) { return e * e; };
         auto grad_x = convolve<double>(img, Kernels::SobelX).apply(abs_f);
         auto grad_y = convolve<double>(img, Kernels::SobelY).apply(abs_f);
         BmpIO::write(grad_x.as_type<uint8_t>(), "gradx.bmp");
         BmpIO::write(grad_y.as_type<uint8_t>(), "grady.bmp");
         auto res = grad_x + grad_y;
-        BmpIO::write(res.as_type<uint8_t>(), g_outfile);
+        // res.transform([](auto e) { return std::sqrt(e); });
+        BmpIO::write(threshold(res.as_type<uint8_t>(), g_threshold), g_outfile);
         break;
     }
     case ActionType::PREWITT: {
