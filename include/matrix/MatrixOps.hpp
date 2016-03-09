@@ -42,6 +42,17 @@ sipl::Matrix<Scalar, R, C> operator+(Scalar s, const sipl::Matrix<T, R, C>& m)
     return m + s;
 }
 
+template <typename T, int32_t R, int32_t C>
+sipl::Matrix<T, R, C> operator+(const sipl::Matrix<T, R, C>& m1,
+                                const sipl::Matrix<T, R, C>& m2)
+{
+    sipl::Matrix<T, R, C> new_m(m1.dims);
+    for (int32_t i = 0; i < m1.size(); ++i) {
+        new_m[i] = m1[i] + m2[i];
+    }
+    return new_m;
+}
+
 template <typename T, int32_t R, int32_t C, typename Scalar>
 sipl::Matrix<Scalar, R, C> operator-(const sipl::Matrix<T, R, C>& m, Scalar s)
 {

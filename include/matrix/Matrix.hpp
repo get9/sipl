@@ -3,6 +3,7 @@
 #ifndef SIPL_MATRIX_MATRIX_H
 #define SIPL_MATRIX_MATRIX_H
 
+#include <iostream>
 #include "matrix/Wrappers.hpp"
 #include "matrix/Vector.hpp"
 #include "matrix/MatrixBase.hpp"
@@ -73,6 +74,32 @@ public:
         std::transform(std::begin(other), std::end(other),
                        std::begin(this->data_),
                        [](auto e) { return Dtype(e); });
+    }
+
+    template <typename OtherType>
+    Matrix as_type() const
+    {
+        const auto tmp = (*this) / double(this->max());
+        Matrix new_m;
+        for (int32_t i = 0; i < this->nelements_; ++i) {
+            new_m[i] = OtherType(
+                std::round(tmp[i] * std::numeric_limits<OtherType>::max()));
+        }
+        return new_m;
+    }
+
+    template <typename Functor>
+    void apply(Functor f)
+    {
+        std::transform(this->begin(), this->end(), this->begin(), f);
+    }
+
+    template <typename Functor>
+    Matrix apply(Functor f) const
+    {
+        Matrix new_m;
+        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
     }
 };
 
@@ -174,6 +201,32 @@ public:
         }
         return patch;
     }
+
+    template <typename OtherType>
+    Matrix<OtherType, Dynamic, Dynamic> as_type() const
+    {
+        const auto tmp = (*this) / double(this->max());
+        Matrix<OtherType, Dynamic, Dynamic> new_m(this->dims);
+        for (int32_t i = 0; i < this->nelements_; ++i) {
+            new_m[i] = OtherType(
+                std::round(tmp[i] * std::numeric_limits<OtherType>::max()));
+        }
+        return new_m;
+    }
+
+    template <typename Functor>
+    void transform(Functor f)
+    {
+        std::transform(this->begin(), this->end(), this->begin(), f);
+    }
+
+    template <typename Functor>
+    Matrix apply(Functor f) const
+    {
+        Matrix new_m(this->dims);
+        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
+    }
 };
 
 // Specialization of the above for dynamically-allocated Matrix with Vector
@@ -249,6 +302,20 @@ public:
             }
         }
         return patch;
+    }
+
+    template <typename Functor>
+    void apply(Functor f)
+    {
+        std::transform(this->begin(), this->end(), this->begin(), f);
+    }
+
+    template <typename Functor>
+    Matrix apply(Functor f) const
+    {
+        Matrix new_m(this->dims);
+        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
     }
 };
 

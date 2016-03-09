@@ -176,6 +176,29 @@ public:
         return s << m.str();
     }
 
+    // Min/max operations
+    Dtype max(void) const
+    {
+        return *std::max_element(std::begin(data_), std::end(data_));
+    }
+
+    Dtype min(void) const
+    {
+        return *std::min_element(std::begin(data_), std::end(data_));
+    }
+
+    int32_t argmax() const
+    {
+        auto m = std::max_element(std::begin(data_), std::end(data_));
+        return m - std::begin(data_);
+    }
+
+    int32_t argmin() const
+    {
+        auto m = std::min_element(std::begin(data_), std::end(data_));
+        return m - std::begin(data_);
+    }
+
 protected:
     int32_t nelements_;
     int32_t nbytes_;
