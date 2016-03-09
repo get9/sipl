@@ -41,6 +41,7 @@ set(SIPL_SOURCES
 
 #add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
 #add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
-add_executable(HW1 test.cpp "${SIPL_SOURCES}")
+#add_executable(HW1 test.cpp "${SIPL_SOURCES}")
 #add_executable(vectortest vector_test.cpp)# "${SIPL_SOURCES}")
 #add_executable(matrixtest matrix_test.cpp)# "${SIPL_SOURCES}")
+add_executable(HW4edge edge.cpp "${SIPL_SOURCES}")
