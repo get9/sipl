@@ -4,6 +4,7 @@
 #define SIPL_MATRIX_WRAPPERS_H
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 
 // Wrapper for Dtype*. Need this so we can use the regular VectorBase calls.
