@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     // Perform relevant action
     switch (g_action) {
     case ActionType::CONVOLVE: {
-        const auto result = convolve(img, kernel);
+        const auto result = convolve<uint8_t>(img, kernel);
         BmpIO::write(result, g_outfile);
         break;
     }
