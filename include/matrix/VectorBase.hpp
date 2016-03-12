@@ -31,7 +31,7 @@ public:
     }
 
     VectorBase(std::initializer_list<Dtype> list)
-        : nelements_(list.size())
+        : nelements_(int32_t(list.size()))
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
         , data_(nelements_)
     {
