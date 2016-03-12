@@ -2,24 +2,11 @@
 #include <fstream>
 #include <memory>
 #include <limits>
+#include "matrix/Matrix"
 #include "io/BmpIO.hpp"
-#include "matrix/Matrix.hpp"
+#include "Common.hpp"
 
 using namespace sipl;
-
-// Clamp a value to min/max values
-uint8_t clamp(double val)
-{
-    const auto min = std::numeric_limits<uint8_t>::min();
-    const auto max = std::numeric_limits<uint8_t>::max();
-    if (val > max) {
-        return max;
-    } else if (val < min) {
-        return min;
-    } else {
-        return uint8_t(std::round(val));
-    }
-}
 
 MatrixXb BmpIO::read(const char* filename)
 {
@@ -63,8 +50,8 @@ MatrixXb BmpIO::read(const std::string& filename)
         const auto off = i * padded_row_size;
         for (int32_t j = 0; j < img.dims[1]; ++j) {
             const auto grayval = uint8_t(data_start[j + off]);
-            img(img.dims[0] - 1 - i, j) =
-                clamp(0.299 * grayval + 0.587 * grayval + 0.114 * grayval);
+            img(img.dims[0] - 1 - i, j) = clamp<uint8_t>(
+                0.299 * grayval + 0.587 * grayval + 0.114 * grayval);
         }
     }
 
