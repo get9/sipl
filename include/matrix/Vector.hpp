@@ -68,7 +68,7 @@ public:
         typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
     decltype(auto) apply(Functor f) const
     {
-        Vector<OutputType, Length> new_m(this->nelements_);
+        Vector<OutputType, Length> new_m;
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
         return new_m;
     }
