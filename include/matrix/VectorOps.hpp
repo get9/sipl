@@ -127,6 +127,13 @@ bool operator>=(const sipl::Vector<T1, L1>& lhs,
     return !operator<(lhs, rhs);
 }
 
+// Make a vector homogenous
+template <typename T, int32_t Length>
+Vector<double, Length> homogenize(const Vector<T, Length>& v)
+{
+    return v / double(v.back());
+}
+
 // Convert to a string
 // XXX Need to properly constrain this template so it's not a catch-all for
 // other operator<<'s.
