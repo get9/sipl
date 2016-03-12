@@ -4,16 +4,18 @@
 #define SIPL_IMPROC_IMPROC_H
 
 #include <limits>
-#define _USE_MATH_DEFINES
-#include <math.h>
 #include "matrix/Vector"
 #include "matrix/Matrix"
 #include "improc/NearestNeighborInterpolator.hpp"
 #include "improc/BilinearInterpolator.hpp"
-#include "improc/Utility.hpp"
+#include "improc/Kernels.hpp"
+#include "Common.hpp"
 
 namespace sipl
 {
+
+// Possible interpolation types
+enum class InterpolateType { BILINEAR, NEAREST_NEIGHBOR, UNKNOWN };
 
 // Specialized inverse for mat33d
 inline static Matrix33d inv(const Matrix33d& m)
@@ -68,16 +70,6 @@ MatrixX<ElementType> projective_transform(
     return new_image;
 }
 
-MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
-{
-    MatrixXb grayscale(color.dims[0], color.dims[1]);
-    for (int32_t i = 0; i < color.size(); ++i) {
-        RgbPixel p(color[i]);
-        grayscale[i] = clamp(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
-    }
-    return grayscale;
-}
-
 // XXX only works for integral-typed matrices for now, need to figure out how to
 // get it to work for Vector-type matrices
 template <typename Dtype, typename Interpolator>
@@ -85,7 +77,7 @@ MatrixX<Dtype> rotate_image(const MatrixX<Dtype>& in_mat,
                             double degrees,
                             const Dtype fill_value = Dtype(0))
 {
-    const double rads = degrees / 180.0 * M_PI;
+    auto rads = deg2rad(degrees);
     Matrix33d rotation_matrix{{std::cos(rads), std::sin(rads), 0},
                               {-std::sin(rads), std::cos(rads), 0},
                               {0, 0, 1}};
@@ -102,7 +94,7 @@ MatrixX<OutputType> convolve(const MatrixX<InputType>& img,
     assert(kernel.dims[0] % 2 == 1 && kernel.dims[1] % 2 == 1 &&
            "kernel must have odd # rows and cols");
 
-    MatrixX<OutputType> conv_out(img.dims);
+    MatrixX<OutputType> conv(img.dims);
     for (int32_t i = 0; i < img.dims[0]; ++i) {
         for (int32_t j = 0; j < img.dims[1]; ++j) {
             const auto patch =
@@ -119,11 +111,38 @@ MatrixX<OutputType> convolve(const MatrixX<InputType>& img,
             }
 
             // Assign to new matrix position
-            conv_out(i, j) = clamp(sum);
+            conv(i, j) = clamp<OutputType>(sum);
         }
     }
 
-    return conv_out;
+    return conv;
+}
+
+template <typename OutputType, typename InputType, int32_t Rows, int32_t Cols>
+MatrixX<OutputType> correlate(const MatrixX<InputType>& img,
+                              const Matrix<double, Rows, Cols>& kernel)
+{
+    assert(kernel.dims[0] % 2 == 1 && kernel.dims[1] % 2 == 1 &&
+           "kernel must have odd # rows and cols");
+
+    MatrixX<OutputType> corr(img.dims);
+    for (int32_t i = 0; i < img.dims[0]; ++i) {
+        for (int32_t j = 0; j < img.dims[1]; ++j) {
+            const auto patch =
+                img.patch(i, j, kernel.dims[0] / 2, kernel.dims[1] / 2);
+
+            // Correlation is element-by-element multiplication
+            double sum = 0;
+            for (int32_t k = 0; k < patch.size(); ++k) {
+                sum += patch[k] * kernel[k];
+            }
+
+            // Assign to new matrix position
+            corr(i, j) = clamp<OutputType>(sum);
+        }
+    }
+
+    return corr;
 }
 
 template <typename Dtype>
@@ -158,9 +177,41 @@ MatrixX<Dtype> threshold(const MatrixX<Dtype>& img, int32_t threshold)
     const auto max = std::numeric_limits<Dtype>::max();
     MatrixX<Dtype> thresh(img.dims);
     for (int32_t i = 0; i < img.size(); ++i) {
-        thresh[i] = (img[i] <= threshold ? min : max);
+        thresh[i] = (img[i] >= threshold ? max : min);
     }
     return thresh;
+}
+
+// Apply Sobel operator for edge detection
+template <typename Dtype>
+MatrixX<double> sobel(const MatrixX<Dtype>& img)
+{
+    auto square = [](auto e) { return e * e; };
+    auto grad_x = correlate<double>(img, Kernels::SobelX).apply(square);
+    auto grad_y = correlate<double>(img, Kernels::SobelY).apply(square);
+    return (grad_x + grad_y).apply([](auto e) { return std::sqrt(e); });
+}
+
+// Apply Sobel operator for edge detection
+template <typename Dtype>
+MatrixX<double> prewitt(const MatrixX<Dtype>& img)
+{
+    auto square = [](auto e) { return e * e; };
+    auto grad_x = correlate<double>(img, Kernels::PrewittX).apply(square);
+    auto grad_y = correlate<double>(img, Kernels::PrewittY).apply(square);
+    return (grad_x + grad_y).apply([](auto e) { return std::sqrt(e); });
+}
+
+// Convert a color image to grayscale
+MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
+{
+    MatrixXb grayscale(color.dims[0], color.dims[1]);
+    for (int32_t i = 0; i < color.size(); ++i) {
+        RgbPixel p(color[i]);
+        grayscale[i] =
+            clamp<uint8_t>(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
+    }
+    return grayscale;
 }
 }
 

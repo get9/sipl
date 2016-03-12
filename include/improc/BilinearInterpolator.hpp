@@ -4,7 +4,7 @@
 #define SIPL_IMPROC_BILINEARINTERPOLATOR_HPP
 
 #include "matrix/Matrix.hpp"
-#include "improc/Utility.hpp"
+#include "Common.hpp"
 
 namespace sipl
 {
@@ -36,7 +36,7 @@ struct BilinearInterpolator {
         // Then linearly interpolate those values
         InternalType f = (y2 - y) * xy1 + (y - y1) * xy2;
 
-        return clamp(f);
+        return clamp<uint8_t>(f);
     }
 };
 }

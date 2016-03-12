@@ -9,6 +9,7 @@
 #include "matrix/Matrix"
 #include "matrix/Vector"
 #include "improc/Improc.hpp"
+#include "Common.hpp"
 
 namespace sipl
 {
@@ -71,43 +72,10 @@ MatrixX<Dtype> equalize_hist(const MatrixX<Dtype>& mat)
     // 2. Compute the new equalized histogram image via lookup
     MatrixX<uint8_t> equalized_hist_img(mat.dims);
     for (int32_t i = 0; i < mat.size(); ++i) {
-        equalized_hist_img[i] = equalized_hist[mat[i]];
+        equalized_hist_img[i] = uint8_t(equalized_hist[mat[i]]);
     }
 
     return equalized_hist_img;
-}
-
-// Convert incoming histogram to an actual image
-// For now, only writes out 256x256 histogram image
-MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
-{
-    constexpr auto max = int32_t(std::numeric_limits<uint8_t>::max());
-    constexpr int32_t max_size = max + 1;
-
-    // Make a rotated histogram by drawing each row as the number of entries in
-    // that bin
-    /*
-    MatrixX<uint8_t> hist_plot(max_size, max_size);
-    for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
-        const int32_t count =
-            std::round(hist[j] * max_size / double(hist.max()));
-        for (int32_t i = hist_plot.dims[0] - 1; i >= 0; --i) {
-            hist_plot(i, j) = (i > count ? max : 0);
-        }
-    }
-    */
-    MatrixXb hist_plot(max_size, max_size);
-    for (int32_t i = 0; i < hist_plot.dims[0]; ++i) {
-        int32_t count =
-            int32_t(std::round(hist[i] / double(hist.max()) * max_size));
-        for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
-            hist_plot(i, j) = (j < count ? 0 : max);
-        }
-    }
-
-    // Rotate +90 degrees
-    using Interpolator = BilinearInterpolator<double>;
-    return rotate_image<uint8_t, Interpolator>(hist_plot, 90, max);
 }
 
 // Histogram match - return a new matrix (doesn't modify old image)
@@ -136,7 +104,7 @@ MatrixX<Dtype> histogram_match(const MatrixX<Dtype>& target,
                 std::round((target_cdf_norm[i] - source_cdf_norm[j]) * max)));
             if (res <= min_diff) {
                 min_diff = res;
-                lut[j] = i;
+                lut[j] = Dtype(i);
             }
         }
     }
@@ -150,6 +118,29 @@ MatrixX<Dtype> histogram_match(const MatrixX<Dtype>& target,
     }
 
     return modified_source;
+}
+
+// Convert incoming histogram to an actual image
+// For now, only writes out 256x256 histogram image
+MatrixX<uint8_t> hist_to_img(const VectorX<uint32_t>& hist)
+{
+    constexpr auto max = int32_t(std::numeric_limits<uint8_t>::max());
+    constexpr int32_t max_size = max + 1;
+
+    // Make a rotated histogram by drawing each row as the number of entries in
+    // that bin
+    MatrixXb hist_plot(max_size, max_size);
+    for (int32_t i = 0; i < hist_plot.dims[0]; ++i) {
+        int32_t count =
+            int32_t(std::round(hist[i] / double(hist.max()) * max_size));
+        for (int32_t j = 0; j < hist_plot.dims[1]; ++j) {
+            hist_plot(i, j) = (j < count ? 0 : max);
+        }
+    }
+
+    // Rotate +90 degrees
+    using Interpolator = BilinearInterpolator<double>;
+    return rotate_image<uint8_t, Interpolator>(hist_plot, 90, max);
 }
 }
 
