@@ -3,7 +3,8 @@
 #include <cstring>
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix"
-#include "improc/Improc"
+#include "improc/Improc.hpp"
+#include "improc/Kernels.hpp"
 
 using namespace sipl;
 
@@ -41,30 +42,26 @@ int main(int argc, char** argv)
     // Perform relevant action
     switch (g_action) {
     case ActionType::SOBEL: {
-        auto abs_f = [](auto e) { return std::abs(e); };
-        // auto square = [](auto e) { return e * e; };
-        auto grad_x = convolve<double>(img, Kernels::SobelX).apply(abs_f);
-        auto grad_y = convolve<double>(img, Kernels::SobelY).apply(abs_f);
-        BmpIO::write(grad_x.as_type<uint8_t>(), "gradx.bmp");
-        BmpIO::write(grad_y.as_type<uint8_t>(), "grady.bmp");
-        auto res = grad_x + grad_y;
-        // res.transform([](auto e) { return std::sqrt(e); });
-        BmpIO::write(threshold(res.as_type<uint8_t>(), g_threshold), g_outfile);
+        auto grad = sobel(img);
+        auto thresh = threshold(grad.as_type<uint8_t>(), g_threshold);
+        BmpIO::write(thresh, g_outfile);
         break;
     }
     case ActionType::PREWITT: {
-        // BmpIO::write(threshold(result, g_threshold), g_outfile);
-        std::cerr << "[error]: not implemented yet" << std::endl;
-        std::exit(1);
+        auto grad = prewitt(img);
+        auto thresh = threshold(grad.as_type<uint8_t>(), g_threshold);
+        BmpIO::write(thresh, g_outfile);
         break;
     }
     case ActionType::CANNY: {
         std::cerr << "[error]: not implemented yet" << std::endl;
         std::exit(1);
+        break;
     }
     case ActionType::UNKNOWN:
         std::cerr << "[error]: unknown action type" << std::endl;
         std::exit(1);
+        break;
     }
 }
 
@@ -81,11 +78,11 @@ void parse_commandline(int32_t argc, char** argv)
         } else if (std::strncmp(argv[i], "-s", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::SOBEL;
-            g_threshold = std::stod(argv[i]);
+            g_threshold = std::stoi(argv[i]);
         } else if (std::strncmp(argv[i], "-p", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::PREWITT;
-            g_threshold = std::stod(argv[i]);
+            g_threshold = std::stoi(argv[i]);
         } else if (std::strncmp(argv[i], "-p", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::CANNY;
