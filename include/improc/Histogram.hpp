@@ -17,7 +17,7 @@ namespace sipl
 template <typename Dtype>
 VectorX<uint32_t> histogram(const MatrixX<Dtype>& mat)
 {
-    const auto max = std::numeric_limits<Dtype>::max();
+    const int32_t max = std::numeric_limits<Dtype>::max();
     VectorX<uint32_t> hist(max + 1, 0);
     for (int32_t i = 0; i < mat.size(); ++i) {
         hist[mat[i]]++;
