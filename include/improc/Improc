@@ -7,7 +7,7 @@
 #ifndef SIPL_IMPROC_IMPROC
 #define SIPL_IMPROC_IMPROC
 
-#include "improc/Improc.hpp"
-#include "improc/Kernels.hpp"
+#include "improc/Filter.hpp"
+#include "improc/Transform.hpp"
 
 #endif

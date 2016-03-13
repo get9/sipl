@@ -3,8 +3,7 @@
 #include <cstring>
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix"
-#include "improc/Improc.hpp"
-#include "improc/Kernels.hpp"
+#include "improc/Filter.hpp"
 
 using namespace sipl;
 
@@ -43,13 +42,13 @@ int main(int argc, char** argv)
     switch (g_action) {
     case ActionType::SOBEL: {
         auto grad = sobel(img);
-        auto thresh = threshold(grad.as_type<uint8_t>(), g_threshold);
+        auto thresh = threshold_binary(grad.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
     }
     case ActionType::PREWITT: {
         auto grad = prewitt(img);
-        auto thresh = threshold(grad.as_type<uint8_t>(), g_threshold);
+        auto thresh = threshold_binary(grad.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
     }

@@ -4,7 +4,7 @@
 #include <cmath>
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix.hpp"
-#include "improc/Improc.hpp"
+#include "improc/Filter.hpp"
 
 using namespace sipl;
 

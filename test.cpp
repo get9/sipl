@@ -3,7 +3,7 @@
 #include "io/ImageIO.hpp"
 #include "io/PpmIO.hpp"
 #include "io/PgmIO.hpp"
-#include "improc/Improc.hpp"
+#include "improc/Improc"
 
 using namespace sipl;
 
