@@ -125,6 +125,32 @@ std::ostream& operator<<(std::ostream& s, const sipl::Matrix<T, R, C>& m)
 {
     return s << m.str();
 }
+
+// Other generic operations on each individual element
+// Put in their own namespace so they don't collide with STL functions
+// Use decltype(auto) for return type --> let Matrix::apply handle deducing
+// operation return type
+namespace math
+{
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) square(const Matrix<Dtype, Rows, Cols>& m)
+{
+    return m.apply([](auto e) { return e * e; });
+}
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) sqrt(const Matrix<Dtype, Rows, Cols>& m)
+{
+    return m.apply([](auto e) { return std::sqrt(e); });
+}
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) pow(const Matrix<Dtype, Rows, Cols>& m, double exp)
+{
+    return m.apply([exp](auto e) { return std::pow(e, exp); });
+}
+}
 }
 
 #endif
