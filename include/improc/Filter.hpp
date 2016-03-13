@@ -106,7 +106,7 @@ MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, int32_t threshold)
 
     if (threshold < min || threshold > max) {
         throw std::invalid_argument(
-            "threshold must be between min and max for Dtype)");
+            "threshold must be between min and max for Dtype");
     }
 
     MatrixX<Dtype> thresh(img.dims);

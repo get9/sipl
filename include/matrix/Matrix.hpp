@@ -204,7 +204,7 @@ public:
     Matrix<OtherType, Dynamic, Dynamic> as_type() const
     {
         const auto max = std::numeric_limits<OtherType>::max();
-        const auto tmp = (*this) / this->max();
+        const auto tmp = (*this) / double(this->max());
         return tmp.apply(
             [max](auto e) { return OtherType(std::round(e * max)); });
     }
@@ -326,13 +326,6 @@ public:
     }
 };
 
-// Dynamic aliases
-template <typename T>
-using MatrixX = Matrix<T, Dynamic, Dynamic>;
-using MatrixXd = MatrixX<double>;
-using MatrixXi = MatrixX<int32_t>;
-using MatrixXb = MatrixX<uint8_t>;
-
 // Static aliases
 template <typename T>
 using Matrix44 = Matrix<T, 4, 4>;
@@ -343,6 +336,13 @@ using Matrix33i = Matrix33<int32_t>;
 using Matrix33d = Matrix33<double>;
 using Matrix33f = Matrix33<float>;
 using Matrix33b = Matrix33<uint8_t>;
+
+// Dynamic aliases
+template <typename T>
+using MatrixX = Matrix<T, Dynamic, Dynamic>;
+using MatrixXd = MatrixX<double>;
+using MatrixXi = MatrixX<int32_t>;
+using MatrixXb = MatrixX<uint8_t>;
 }
 
 #endif
