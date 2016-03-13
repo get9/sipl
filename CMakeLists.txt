@@ -4,6 +4,7 @@ project(SIPL)
 # Let's use C++14
 set(CMAKE_CXX_STANDARD 14)
 
+# Enable clang Asan
 #set(CMAKE_CXX_FLAGS
 #    "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
 
