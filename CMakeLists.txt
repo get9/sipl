@@ -4,10 +4,11 @@ project(SIPL)
 # Let's use C++14
 set(CMAKE_CXX_STANDARD 14)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
+#set(CMAKE_CXX_FLAGS
+#    "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
 
 # Set CXX_FLAGS so ninja output is colorized
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     add_compile_options(-Wall)
     add_compile_options(-Wpedantic)
     add_compile_options(-Wextra)
@@ -20,6 +21,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(-Wno-c++11-narrowing)
     add_compile_options(-Wimplicit-fallthrough)
     add_compile_options(-Werror)
+    #add_compile_options(-Weverything)
 endif()
 
 # Export compile commands for YCM
@@ -28,20 +30,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 # Set directories of output files
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
+# Includes
 include_directories(include)
+
+# Source files. After adding src subdirectory, SIPL_SOURCES should have all
+# sources
 add_subdirectory(src)
 
-# List of sources
-set(SIPL_SOURCES
-    src/io/NetpbmIOBase.cpp
-    src/io/PgmIO.cpp
-    src/io/PpmIO.cpp
-    src/io/BmpIO.cpp
-)
-
-add_executable(HW2histo histogram.cpp "${SIPL_SOURCES}")
-add_executable(HW2filter filter_test.cpp "${SIPL_SOURCES}")
-add_executable(HW1 test.cpp "${SIPL_SOURCES}")
-#add_executable(vectortest vector_test.cpp)# "${SIPL_SOURCES}")
-#add_executable(matrixtest matrix_test.cpp)# "${SIPL_SOURCES}")
-add_executable(HW4edge edge.cpp "${SIPL_SOURCES}")
+add_executable(HW2histo histogram.cpp ${SIPL_SOURCES})
+add_executable(HW2filter filter_test.cpp ${SIPL_SOURCES})
+add_executable(HW1 test.cpp ${SIPL_SOURCES})
+#add_executable(vectortest vector_test.cpp)# ${SIPL_SOURCES})
+#add_executable(matrixtest matrix_test.cpp)# ${SIPL_SOURCES})
+add_executable(HW4edge edge.cpp ${SIPL_SOURCES})
