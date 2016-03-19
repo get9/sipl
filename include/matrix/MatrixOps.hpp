@@ -150,6 +150,12 @@ decltype(auto) pow(const Matrix<Dtype, Rows, Cols>& m, double exp)
 {
     return m.apply([exp](auto e) { return std::pow(e, exp); });
 }
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) abs(const Matrix<Dtype, Rows, Cols>& m)
+{
+    return m.apply([](auto e) { return std::abs(e); });
+}
 }
 }
 
