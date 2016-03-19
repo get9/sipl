@@ -5,6 +5,7 @@
 
 #include <array>
 #include <sstream>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
@@ -19,6 +20,8 @@ template <typename Dtype, int32_t Rows, int32_t Cols, typename Container>
 class MatrixBase
 {
 public:
+    using value_type = Dtype;
+
     // XXX revisit to try and make const?
     std::array<int32_t, 2> dims;
 
