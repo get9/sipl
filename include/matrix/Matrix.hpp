@@ -78,10 +78,7 @@ public:
     template <typename OtherType>
     Matrix<OtherType, Rows, Cols> as_type() const
     {
-        const auto max = std::numeric_limits<OtherType>::max();
-        const auto tmp = (*this) / double(this->max());
-        return tmp.apply(
-            [max](auto e) { return OtherType(std::round(e * max)); });
+        return this->apply([](auto e) { return OtherType(e); });
     }
 
     template <typename UnaryFunctor>
@@ -98,6 +95,23 @@ public:
     {
         Matrix<OutputType, Rows, Cols> new_m;
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
+    }
+
+    Matrix clip(Dtype new_min, Dtype new_max) const
+    {
+        Matrix new_m;
+        for (int32_t i = 0; i < this->size(); ++i) {
+            auto e = std::round((*this)[i]);
+            if (e < new_min) {
+                new_m[i] = new_min;
+            } else if (e > new_max) {
+                new_m[i] = new_max;
+            } else {
+                new_m[i] = e;
+            }
+        }
+
         return new_m;
     }
 };
@@ -203,10 +217,7 @@ public:
     template <typename OtherType>
     Matrix<OtherType, Dynamic, Dynamic> as_type() const
     {
-        const auto max = std::numeric_limits<OtherType>::max();
-        const auto tmp = (*this) / double(this->max());
-        return tmp.apply(
-            [max](auto e) { return OtherType(std::round(e * max)); });
+        return this->apply([](auto e) { return OtherType(e); });
     }
 
     template <typename UnaryFunctor>
@@ -223,6 +234,23 @@ public:
     {
         Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
         std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        return new_m;
+    }
+
+    Matrix clip(Dtype new_min, Dtype new_max) const
+    {
+        Matrix new_m(this->dims);
+        for (int32_t i = 0; i < this->size(); ++i) {
+            auto e = std::round((*this)[i]);
+            if (e < new_min) {
+                new_m[i] = new_min;
+            } else if (e > new_max) {
+                new_m[i] = new_max;
+            } else {
+                new_m[i] = e;
+            }
+        }
+
         return new_m;
     }
 };

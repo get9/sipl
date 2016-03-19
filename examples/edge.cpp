@@ -4,6 +4,7 @@
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix"
 #include "improc/Filter.hpp"
+#include "Util.hpp"
 
 using namespace sipl;
 
@@ -42,13 +43,15 @@ int main(int argc, char** argv)
     switch (g_action) {
     case ActionType::SOBEL: {
         auto grad = sobel(img);
-        auto thresh = threshold_binary(grad.as_type<uint8_t>(), g_threshold);
+        auto clipped = grad.clip(util::min<uint8_t>, util::max<uint8_t>);
+        auto thresh = threshold_binary(clipped.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
     }
     case ActionType::PREWITT: {
         auto grad = prewitt(img);
-        auto thresh = threshold_binary(grad.as_type<uint8_t>(), g_threshold);
+        auto clipped = grad.clip(util::min<uint8_t>, util::max<uint8_t>);
+        auto thresh = threshold_binary(clipped.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
     }

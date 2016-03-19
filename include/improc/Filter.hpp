@@ -9,6 +9,7 @@
 #include "matrix/Matrix"
 #include "matrix/Vector"
 #include "improc/Kernels.hpp"
+#include "Util.hpp"
 
 namespace sipl
 {
@@ -101,8 +102,8 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
 template <typename Dtype>
 MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, int32_t threshold)
 {
-    const auto min = std::numeric_limits<Dtype>::min();
-    const auto max = std::numeric_limits<Dtype>::max();
+    const auto min = util::min<Dtype>;
+    const auto max = util::max<Dtype>;
 
     if (threshold < min || threshold > max) {
         throw std::invalid_argument(
