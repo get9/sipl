@@ -121,8 +121,8 @@ MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, int32_t threshold)
 template <typename Dtype>
 MatrixX<double> sobel(const MatrixX<Dtype>& img)
 {
-    auto grad_x = math::square(correlate<double>(img, Kernels::SobelX));
-    auto grad_y = math::square(correlate<double>(img, Kernels::SobelY));
+    auto grad_x = math::square(convolve<double>(img, Kernels::SobelX));
+    auto grad_y = math::square(convolve<double>(img, Kernels::SobelY));
     return math::sqrt(grad_x + grad_y);
 }
 
@@ -130,8 +130,8 @@ MatrixX<double> sobel(const MatrixX<Dtype>& img)
 template <typename Dtype>
 MatrixX<double> prewitt(const MatrixX<Dtype>& img)
 {
-    auto grad_x = math::square(correlate<double>(img, Kernels::PrewittX));
-    auto grad_y = math::square(correlate<double>(img, Kernels::PrewittY));
+    auto grad_x = math::square(convolve<double>(img, Kernels::PrewittX));
+    auto grad_y = math::square(convolve<double>(img, Kernels::PrewittY));
     return math::sqrt(grad_x + grad_y);
 }
 
