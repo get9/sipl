@@ -9,6 +9,7 @@
 #include "matrix/Matrix"
 #include "matrix/Vector"
 #include "improc/Kernels.hpp"
+#include "io/BmpIO.hpp"
 #include "Util.hpp"
 
 namespace sipl
@@ -148,51 +149,55 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
     auto grad_y = convolve<double>(smooth, kernels::SobelY);
-    auto mag = math::hypot(grad_x, grad_y);
+    auto mag = math::hypot(grad_x, grad_y).template as_type<uint8_t>();
+    BmpIO::write(mag, "grad_mag.bmp");
     auto angle = math::atan2(grad_y, grad_x);
 
     // 3. Thin edges using non-maximum suppression
-    for (int32_t i = 0; i < mag.dims[0]; ++i) {
-        for (int32_t j = 0; j < mag.dims[1]; ++j) {
+    for (int32_t i = 1; i < mag.dims[0] - 1; ++i) {
+        for (int32_t j = 1; j < mag.dims[1] - 1; ++j) {
             // Skip zero gradient values
             if (mag(i, j) == 0) {
                 continue;
             }
 
             auto a = angle(i, j);
-            // Vertical edges
-            if ((a > -M_PI / 8 && a <= M_PI / 8) ||
-                (a > 7 * M_PI / 8 && a <= -7 * M_PI / 8)) {
-                if (i + 1 >= mag.dims[0] || i - 1 < 0 ||
-                    mag(i - 1, j) > mag(i, j) || mag(i + 1, j) > mag(i, j)) {
+            // Vertical edge
+            if ((a >= -M_PI / 8 && a < 0) || (a >= 0 && a < M_PI / 8) ||
+                (a >= 7 * M_PI / 8 && a <= M_PI) ||
+                (a < -7 * M_PI / 8 && a >= -M_PI)) {
+                if (/*j + 1 >= mag.dims[1] || j - 1 < 0 ||*/
+                    mag(i, j - 1) >= mag(i, j) || mag(i, j + 1) >= mag(i, j)) {
                     mag(i, j) = 0;
                 }
             }
 
             // Diagonal high to low edge
-            else if ((a > M_PI / 8 && a <= 3 * M_PI / 8) ||
+            else if ((a >= M_PI / 8 && a < 3 * M_PI / 8) ||
                      (a <= -5 * M_PI / 8 && a > -7 * M_PI / 8)) {
-                if (i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
-                    j - 1 < 0 || mag(i - 1, j - 1) > mag(i, j) ||
-                    mag(i + 1, j + 1) > mag(i, j)) {
+                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
+                    j - 1 < 0 ||*/ mag(
+                        i - 1, j + 1) >= mag(i, j) ||
+                    mag(i + 1, j - 1) >= mag(i, j)) {
                     mag(i, j) = 0;
                 }
             }
 
             // Horizontal edge
-            else if ((a > 3 * M_PI / 8 && a <= 5 * M_PI / 8) ||
+            else if ((a >= 3 * M_PI / 8 && a < 5 * M_PI / 8) ||
                      (a <= -3 * M_PI / 8 && a > -5 * M_PI / 8)) {
-                if (j + 1 >= mag.dims[1] || j - 1 < 0 ||
-                    mag(i, j - 1) > mag(i, j) || mag(i, j + 1) > mag(i, j)) {
+                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 ||*/
+                    mag(i - 1, j) >= mag(i, j) || mag(i + 1, j) >= mag(i, j)) {
                     mag(i, j) = 0;
                 }
             }
 
             // Diagonal low to high edge
             else {
-                if (i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
-                    j - 1 < 0 || mag(i - 1, j + 1) > mag(i, j) ||
-                    mag(i + 1, j - 1) > mag(i, j)) {
+                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
+                    j - 1 < 0 ||*/ mag(
+                        i - 1, j - 1) >= mag(i, j) ||
+                    mag(i + 1, j + 1) >= mag(i, j)) {
                     mag(i, j) = 0;
                 }
             }
@@ -200,13 +205,12 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
     }
 
     // 4. Threshold by t1, t2
-    /*auto t1thresh =*/threshold_binary(mag, t1);
-    /*auto t2thresh =*/threshold_binary(mag, t2);
+    /*auto t1thresh =*/threshold_binary(mag, uint8_t(t1));
+    /*auto t2thresh =*/threshold_binary(mag, uint8_t(t2));
 
     // 5. Link edges
 
-    return mag.rescale(util::min<uint8_t>, util::max<uint8_t>)
-        .template as_type<uint8_t>();
+    return mag;
 }
 
 // Convert a color image to grayscale
