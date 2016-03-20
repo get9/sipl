@@ -6,7 +6,7 @@ This library is the start of a very simple, basic image processing library. The
 main files are all included in both the include/ and src/ directories. Under
 include/ you can find the template header files that instantiate many of the
 types used throughout - mainly the matrix/vector types. Under the src/ directory
-you can find implementations of the I/O routines (for PGM and PPM).
+you can find implementations of the I/O routines (for PGM, PPM, and BMP).
 
 
 ================================================================================
@@ -39,44 +39,35 @@ There are a few modules in the source:
     - Convolution/filtering routines are in Improc.hpp
     - convert_to_grayscale(), projective_transform live here
     - Histogram handling features are in Histogram.hpp
-* filter_test.cpp
-    - The main test driver for all filter calculations
-* histogram.cpp
-    - The main test driver for all histogram calculations
-
+* examples
+    - Contains all executables for all homeworks thus far:
+         * test.cpp - HW1
+	 * histogram.cpp - HW2
+	 * filter_test.cpp - HW2
+	 * edge.cpp - HW4
+	 * vector_test.cpp / matrix_test.cpp - test files for verifying matrices
+	   and vectors work correctly
 
 ================================================================================
 Usage
 The usage of the program is as described in the problem statement:
 
-    HW2histo.exe -i input.bmp -o output.bmp [-e|-p|-m matchfile.bmp]
-
-    HW2filter.exe -i input.bmp -o output.bmp -f filter.txt [-m [k]]
+    HW4edge.exe -i input.bmp -o output.bmp [-s t | -p t | -c sigma t0 t1]
 
 where:
 
     -i: the input file name
     -o: the output file name
-    -e: equalize histogram of input file
-    -p: plot histogram of input file
-    -m: match histogram of inputfile with matchfile
 
-    -f: the filter file name
-    -m: median filter, optional 'k' for kth-order filtering
+    -s: sobel filter with threshold t
+    -p: prewitt filter with threshold t
+    -c: canny edge detection with:
+    	* gaussian kernel width sigma according to 2 * |2 * sigma| + 1
+	* low threshold t0
+	* high threshold t1
 
 
 ================================================================================
 Bugs
-For the histogram code, I was unable to match exactly the input files. For
-example, the 'tire' image histogram is off by approximately 100 pixels or so.
-I believe this is throwing the other histogram calculations off since they
-utilize the regular histogram feature as a base for their computation.
-
-
-================================================================================
-Notes
-I chose to implement my own Bitmap I/O code. While I can successfully read and
-write images (test by doing image subtraction and looking for differences in
-pixel values), I'm unsure if it's introducing subtle differences that would
-cause my issues with the histogram. However, the filter code produces exactly
-the correct output, so I am not convinced it is the I/O code.
+The output of the Canny edge detector does not exactly match the reference
+images, however total image difference is still < 1%.
