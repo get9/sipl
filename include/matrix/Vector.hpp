@@ -139,6 +139,13 @@ public:
 
 // Static vector aliases
 template <typename Dtype>
+using Vector2 = Vector<Dtype, 2>;
+using Vector2b = Vector2<uint8_t>;
+using Vector2d = Vector2<double>;
+using Vector2f = Vector2<float>;
+using Vector2i = Vector2<int32_t>;
+
+template <typename Dtype>
 using Vector3 = Vector<Dtype, 3>;
 using Vector3b = Vector3<uint8_t>;
 using Vector3d = Vector3<double>;
