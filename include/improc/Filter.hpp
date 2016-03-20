@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <deque>
 #include "Common.hpp"
 #include "matrix/Matrix"
 #include "matrix/Vector"
@@ -149,11 +150,13 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
     auto grad_y = convolve<double>(smooth, kernels::SobelY);
-    auto mag = math::hypot(grad_x, grad_y).template as_type<uint8_t>();
-    BmpIO::write(mag, "grad_mag.bmp");
+    auto mag = math::hypot(grad_x, grad_y)
+                   .clip(util::min<Dtype>, util::max<Dtype>)
+                   .template as_type<uint8_t>();
     auto angle = math::atan2(grad_y, grad_x);
 
     // 3. Thin edges using non-maximum suppression
+    MatrixXb nonmax(mag.dims, 0);
     for (int32_t i = 1; i < mag.dims[0] - 1; ++i) {
         for (int32_t j = 1; j < mag.dims[1] - 1; ++j) {
             // Skip zero gradient values
@@ -162,55 +165,98 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
             }
 
             auto a = angle(i, j);
+
             // Vertical edge
-            if ((a >= -M_PI / 8 && a < 0) || (a >= 0 && a < M_PI / 8) ||
-                (a >= 7 * M_PI / 8 && a <= M_PI) ||
-                (a < -7 * M_PI / 8 && a >= -M_PI)) {
-                if (/*j + 1 >= mag.dims[1] || j - 1 < 0 ||*/
-                    mag(i, j - 1) >= mag(i, j) || mag(i, j + 1) >= mag(i, j)) {
-                    mag(i, j) = 0;
+            if ((-M_PI / 8 <= a && a < 0) || (0 <= a && a < M_PI / 8) ||
+                (7 * M_PI / 8 <= a && a <= M_PI) ||
+                (-M_PI <= a && a < -7 * M_PI / 8)) {
+                if (mag(i, j - 1) < mag(i, j) && mag(i, j + 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Diagonal high to low edge
-            else if ((a >= M_PI / 8 && a < 3 * M_PI / 8) ||
-                     (a <= -5 * M_PI / 8 && a > -7 * M_PI / 8)) {
-                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
-                    j - 1 < 0 ||*/ mag(
-                        i - 1, j + 1) >= mag(i, j) ||
-                    mag(i + 1, j - 1) >= mag(i, j)) {
-                    mag(i, j) = 0;
+            else if ((M_PI / 8 <= a && a < 3 * M_PI / 8) ||
+                     (-7 * M_PI / 8 <= a && a < -5 * M_PI / 8)) {
+                if (mag(i - 1, j - 1) < mag(i, j) &&
+                    mag(i + 1, j + 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Horizontal edge
-            else if ((a >= 3 * M_PI / 8 && a < 5 * M_PI / 8) ||
-                     (a <= -3 * M_PI / 8 && a > -5 * M_PI / 8)) {
-                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 ||*/
-                    mag(i - 1, j) >= mag(i, j) || mag(i + 1, j) >= mag(i, j)) {
-                    mag(i, j) = 0;
+            else if ((3 * M_PI / 8 <= a && a < 5 * M_PI / 8) ||
+                     (-5 * M_PI / 8 <= a && a < -3 * M_PI / 8)) {
+                if (mag(i - 1, j) < mag(i, j) && mag(i + 1, j) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Diagonal low to high edge
-            else {
-                if (/*i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
-                    j - 1 < 0 ||*/ mag(
-                        i - 1, j - 1) >= mag(i, j) ||
-                    mag(i + 1, j + 1) >= mag(i, j)) {
-                    mag(i, j) = 0;
+            else if ((5 * M_PI / 8 <= a && a < 7 * M_PI / 8) ||
+                     (-3 * M_PI / 8 <= a && a < -M_PI / 8)) {
+                if (mag(i - 1, j + 1) < mag(i, j) &&
+                    mag(i + 1, j - 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
+            } else {
+                std::cout << "shouldn't get here" << std::endl;
             }
         }
     }
 
     // 4. Threshold by t1, t2
-    /*auto t1thresh =*/threshold_binary(mag, uint8_t(t1));
-    /*auto t2thresh =*/threshold_binary(mag, uint8_t(t2));
+    auto t1thresh = threshold_binary(nonmax, Dtype(t1));
+    auto t2thresh = threshold_binary(nonmax, Dtype(t2));
 
     // 5. Link edges
+    MatrixXb linked(mag.dims, 0);
+    for (int32_t i = 1; i < t2thresh.dims[0] - 1; ++i) {
+        for (int32_t j = 1; j < t2thresh.dims[1] - 1; ++j) {
+            // Skip if t2thresh pixel is 0 - it's not an edge
+            if (!t2thresh(i, j)) {
+                continue;
+            }
 
-    return mag;
+            linked(i, j) = t2thresh(i, j);
+
+            // Use a deque to keep track of pixels we need to track
+            // 1. Fill queue with N8 of current pixel in t1thresh if they are an
+            // edge
+            std::deque<Vector2i> queue;
+            for (int32_t m = i - 1; m <= i + 1; ++m) {
+                for (int32_t n = j - 1; n <= j + 1; ++n) {
+                    if (m == i && n == j) {
+                        continue;
+                    }
+                    if (t1thresh(m, n) && !t2thresh(m, n) && !linked(m, n)) {
+                        queue.push_back({m, n});
+                    }
+                }
+            }
+
+            // 2. Loop until queue is empty, processing each pixel's N8
+            while (!queue.empty()) {
+                auto p = queue.front();
+                queue.pop_front();
+                linked(p(0), p(1)) = util::max<Dtype>;
+                for (int32_t m = p(0) - 1; m <= p(0) + 1; ++m) {
+                    for (int32_t n = p(1) - 1; n <= p(1) + 1; ++n) {
+                        if (m == p(0) && n == p(1)) {
+                            continue;
+                        }
+                        if (m >= 0 && m < t1thresh.dims[0] && n >= 0 &&
+                            n < t1thresh.dims[1] && t1thresh(m, n) &&
+                            !t2thresh(m, n) && !linked(m, n)) {
+                            queue.push_back({m, n});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return linked;
 }
 
 // Convert a color image to grayscale
