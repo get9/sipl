@@ -156,6 +156,15 @@ public:
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
     }
 
+    Matrix(std::array<int32_t, 2> new_dims, Dtype fill_value)
+    {
+        this->nelements_ = new_dims[0] * new_dims[1];
+        this->data_ = ContainerType(this->nelements_);
+        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
+        this->dims = new_dims;
+        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+    }
+
     Matrix(std::array<int32_t, 2> new_dims)
     {
         this->nelements_ = new_dims[0] * new_dims[1];
