@@ -144,8 +144,7 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
                      double t2)
 {
     // 1. Smooth with Gaussian filter defined by sigma
-    auto smooth = convolve<double>(
-        img, kernels::gaussian_kernel(sigma, util::max<Dtype>));
+    auto smooth = convolve<double>(img, kernels::gaussian_kernel(sigma));
 
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
