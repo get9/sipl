@@ -147,21 +147,33 @@ public:
         ss << "[";
         for (int32_t i = 0; i < dims[0] - 1; ++i) {
             for (int32_t j = 0; j < dims[1] - 1; ++j) {
-                ss << (*this)(i, j) << " ";
+                ss << std::to_string((*this)(i, j)) << " ";
             }
-            ss << (*this)(i, dims[1] - 1) << ";" << std::endl;
+            ss << std::to_string((*this)(i, dims[1] - 1)) << ";" << std::endl;
         }
         for (int32_t j = 0; j < dims[1] - 1; ++j) {
-            ss << (*this)(dims[0] - 1, j) << " ";
+            ss << std::to_string((*this)(dims[0] - 1, j)) << " ";
         }
-        ss << (*this)(dims[0] - 1, dims[1] - 1) << "]";
+        ss << std::to_string((*this)(dims[0] - 1, dims[1] - 1)) << "]";
         return ss.str();
+    }
+
+    Dtype sum() const
+    {
+        // Sort so we lessen floating point error
+        MatrixBase tmp(*this);
+        std::sort(std::begin(tmp), std::end(tmp));
+        return std::accumulate(std::begin(tmp), std::end(tmp), Dtype(0),
+                               [](Dtype sum, Dtype e) { return sum + e; });
     }
 
     Dtype abssum() const
     {
+        // Sort so we lessen floating point error
+        MatrixBase tmp(*this);
+        std::sort(std::begin(tmp), std::end(tmp));
         return std::accumulate(
-            std::begin(data_), std::end(data_), Dtype(0),
+            std::begin(tmp), std::end(tmp), Dtype(0),
             [](Dtype sum, Dtype e) { return sum + std::abs(e); });
     }
 

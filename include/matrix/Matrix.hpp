@@ -98,6 +98,16 @@ public:
         return new_m;
     }
 
+    Matrix rescale(Dtype new_min, Dtype new_max) const
+    {
+        return this->apply(
+            [ min = this->min(), max = this->max(), new_min, new_max ](auto e) {
+                return Dtype(
+                    ((new_max - new_min) / double(max - min)) * e +
+                    ((new_min * max + min * new_max) / double(max - min)));
+            });
+    }
+
     Matrix clip(Dtype new_min, Dtype new_max) const
     {
         Matrix new_m;
@@ -252,6 +262,16 @@ public:
         }
 
         return new_m;
+    }
+
+    Matrix rescale(Dtype new_min, Dtype new_max) const
+    {
+        return this->apply(
+            [ min = this->min(), max = this->max(), new_min, new_max ](auto e) {
+                return Dtype(
+                    ((new_max - new_min) / double(max - min)) * e +
+                    ((new_min * max + min * new_max) / double(max - min)));
+            });
     }
 };
 
