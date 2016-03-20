@@ -100,7 +100,7 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
 
 // Threshold in-place
 template <typename Dtype>
-MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, int32_t threshold)
+MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, Dtype threshold)
 {
     const auto min = util::min<Dtype>;
     const auto max = util::max<Dtype>;
@@ -121,18 +121,92 @@ MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, int32_t threshold)
 template <typename Dtype>
 MatrixX<double> sobel(const MatrixX<Dtype>& img)
 {
-    auto grad_x = math::square(convolve<double>(img, Kernels::SobelX));
-    auto grad_y = math::square(convolve<double>(img, Kernels::SobelY));
-    return math::sqrt(grad_x + grad_y);
+    auto grad_x = convolve<double>(img, kernels::SobelX);
+    auto grad_y = convolve<double>(img, kernels::SobelY);
+    return math::hypot(grad_x, grad_y);
 }
 
 // Apply Prewitt operator for edge detection
 template <typename Dtype>
 MatrixX<double> prewitt(const MatrixX<Dtype>& img)
 {
-    auto grad_x = math::square(convolve<double>(img, Kernels::PrewittX));
-    auto grad_y = math::square(convolve<double>(img, Kernels::PrewittY));
-    return math::sqrt(grad_x + grad_y);
+    auto grad_x = convolve<double>(img, kernels::PrewittX);
+    auto grad_y = convolve<double>(img, kernels::PrewittY);
+    return math::hypot(grad_x, grad_y);
+}
+
+template <typename Dtype>
+MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
+                     double sigma,
+                     double t1,
+                     double t2)
+{
+    // 1. Smooth with Gaussian filter defined by sigma
+    auto smooth = convolve<double>(
+        img, kernels::gaussian_kernel(sigma, util::max<Dtype>));
+
+    // 2. Compute gradient (magnitude + direction)
+    auto grad_x = convolve<double>(smooth, kernels::SobelX);
+    auto grad_y = convolve<double>(smooth, kernels::SobelY);
+    auto mag = math::hypot(grad_x, grad_y);
+    auto angle = math::atan2(grad_y, grad_x);
+
+    // 3. Thin edges using non-maximum suppression
+    for (int32_t i = 0; i < mag.dims[0]; ++i) {
+        for (int32_t j = 0; j < mag.dims[1]; ++j) {
+            // Skip zero gradient values
+            if (mag(i, j) == 0) {
+                continue;
+            }
+
+            auto a = angle(i, j);
+            // Vertical edges
+            if ((a > -M_PI / 8 && a <= M_PI / 8) ||
+                (a > 7 * M_PI / 8 && a <= -7 * M_PI / 8)) {
+                if (i + 1 >= mag.dims[0] || i - 1 < 0 ||
+                    mag(i - 1, j) > mag(i, j) || mag(i + 1, j) > mag(i, j)) {
+                    mag(i, j) = 0;
+                }
+            }
+
+            // Diagonal high to low edge
+            else if ((a > M_PI / 8 && a <= 3 * M_PI / 8) ||
+                     (a <= -5 * M_PI / 8 && a > -7 * M_PI / 8)) {
+                if (i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
+                    j - 1 < 0 || mag(i - 1, j - 1) > mag(i, j) ||
+                    mag(i + 1, j + 1) > mag(i, j)) {
+                    mag(i, j) = 0;
+                }
+            }
+
+            // Horizontal edge
+            else if ((a > 3 * M_PI / 8 && a <= 5 * M_PI / 8) ||
+                     (a <= -3 * M_PI / 8 && a > -5 * M_PI / 8)) {
+                if (j + 1 >= mag.dims[1] || j - 1 < 0 ||
+                    mag(i, j - 1) > mag(i, j) || mag(i, j + 1) > mag(i, j)) {
+                    mag(i, j) = 0;
+                }
+            }
+
+            // Diagonal low to high edge
+            else {
+                if (i + 1 >= mag.dims[0] || i - 1 < 0 || j + 1 >= mag.dims[1] ||
+                    j - 1 < 0 || mag(i - 1, j + 1) > mag(i, j) ||
+                    mag(i + 1, j - 1) > mag(i, j)) {
+                    mag(i, j) = 0;
+                }
+            }
+        }
+    }
+
+    // 4. Threshold by t1, t2
+    /*auto t1thresh =*/threshold_binary(mag, t1);
+    /*auto t2thresh =*/threshold_binary(mag, t2);
+
+    // 5. Link edges
+
+    return mag.rescale(util::min<uint8_t>, util::max<uint8_t>)
+        .template as_type<uint8_t>();
 }
 
 // Convert a color image to grayscale

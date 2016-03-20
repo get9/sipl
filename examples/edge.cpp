@@ -4,6 +4,7 @@
 #include "io/BmpIO.hpp"
 #include "matrix/Matrix"
 #include "improc/Filter.hpp"
+#include "improc/Kernels.hpp"
 #include "Util.hpp"
 
 using namespace sipl;
@@ -16,9 +17,8 @@ enum class ActionType { SOBEL, PREWITT, CANNY, UNKNOWN };
 // Globals for paths & action type
 std::string g_infile;
 std::string g_outfile;
-int32_t g_threshold = 0;
+uint8_t g_threshold = 0;
 double g_sigma = 0;
-double g_t0 = 0;
 double g_t1 = 0;
 double g_t2 = 0;
 ActionType g_action = ActionType::UNKNOWN;
@@ -56,8 +56,8 @@ int main(int argc, char** argv)
         break;
     }
     case ActionType::CANNY: {
-        std::cerr << "[error]: not implemented yet" << std::endl;
-        std::exit(1);
+        auto thinned = canny(img, g_sigma, g_t1, g_t2);
+        BmpIO::write(thinned, g_outfile);
         break;
     }
     case ActionType::UNKNOWN:
@@ -80,18 +80,17 @@ void parse_commandline(int32_t argc, char** argv)
         } else if (std::strncmp(argv[i], "-s", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::SOBEL;
-            g_threshold = std::stoi(argv[i]);
+            g_threshold = uint8_t(std::stoi(argv[i]));
         } else if (std::strncmp(argv[i], "-p", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::PREWITT;
             g_threshold = std::stoi(argv[i]);
-        } else if (std::strncmp(argv[i], "-p", std::strlen(argv[i])) == 0) {
+        } else if (std::strncmp(argv[i], "-c", std::strlen(argv[i])) == 0) {
             ++i;
             g_action = ActionType::CANNY;
-            g_sigma = std::stod(argv[++i]);
-            g_t0 = std::stod(argv[++i]);
-            g_t1 = std::stod(argv[++i]);
-            g_t2 = std::stod(argv[++i]);
+            g_sigma = std::stod(argv[i++]);
+            g_t1 = std::stod(argv[i++]);
+            g_t2 = std::stod(argv[i++]);
         } else {
             g_action = ActionType::UNKNOWN;
         }

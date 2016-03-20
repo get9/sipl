@@ -156,6 +156,32 @@ decltype(auto) abs(const Matrix<Dtype, Rows, Cols>& m)
 {
     return m.apply([](auto e) { return std::abs(e); });
 }
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) atan2(const Matrix<Dtype, Rows, Cols>& m1,
+                     const Matrix<Dtype, Rows, Cols>& m2)
+{
+    assert(m1.size() == m2.size() && "size mismatch");
+    Matrix<double, Rows, Cols> new_m(m1.dims);
+    for (int32_t i = 0; i < m1.size(); ++i) {
+        // Note: use this ordering so callsites reflect actual atan2() usage
+        new_m[i] = std::atan2(m1[i], m2[i]);
+    }
+    return new_m;
+}
+
+template <typename Dtype, int32_t Rows, int32_t Cols>
+decltype(auto) hypot(const Matrix<Dtype, Rows, Cols>& m1,
+                     const Matrix<Dtype, Rows, Cols>& m2)
+{
+    assert(m1.size() == m2.size() && "size mismatch");
+    Matrix<double, Rows, Cols> new_m(m1.dims);
+    for (int32_t i = 0; i < m1.size(); ++i) {
+        // Note: use this ordering so callsites reflect actual atan2() usage
+        new_m[i] = std::hypot(m1[i], m2[i]);
+    }
+    return new_m;
+}
 }
 }
 
