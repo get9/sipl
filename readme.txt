@@ -52,7 +52,7 @@ There are a few modules in the source:
 Usage
 The usage of the program is as described in the problem statement:
 
-    HW4edge.exe -i input.bmp -o output.bmp [-s t | -p t | -c sigma t0 t1]
+    HW4edge.exe -i input.bmp -o output.bmp [-s t | -p t | -c sigma t0 t1 t2]
 
 where:
 
@@ -63,7 +63,8 @@ where:
     -p: prewitt filter with threshold t
     -c: canny edge detection with:
     	* gaussian kernel width sigma according to 2 * |2 * sigma| + 1
-	* low threshold t0
+	* initial threshold t0
+	* low threshold t1
 	* high threshold t1
 
 
