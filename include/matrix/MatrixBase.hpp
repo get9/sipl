@@ -22,7 +22,6 @@ class MatrixBase
 public:
     using value_type = Dtype;
 
-    // XXX revisit to try and make const?
     std::array<int32_t, 2> dims;
 
     MatrixBase()
@@ -47,6 +46,18 @@ public:
         , nbytes_(other.nbytes_)
         , data_(std::move(other.data_))
     {
+    }
+
+    // Convert one matrix type to another
+    template <typename OtherType>
+    MatrixBase(const MatrixBase<OtherType, Rows, Cols, Container>& other)
+        : dims(other.dims)
+        , nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(other.nelements_)
+    {
+        std::transform(std::begin(other), std::end(other), std::begin(data_),
+                       [](auto e) { return Dtype(e); });
     }
 
     // Iterator & element access
@@ -105,8 +116,8 @@ public:
 
     int32_t size_in_bytes(void) const { return nbytes_; }
 
-    template <typename Functor>
-    void apply(Functor f)
+    template <typename UnaryFunctor>
+    void transform(UnaryFunctor f)
     {
         std::transform(std::begin(data_), std::end(data_), std::begin(data_),
                        f);
@@ -116,28 +127,28 @@ public:
     template <typename Scalar>
     MatrixBase<Dtype, Rows, Cols, Container>& operator/=(Scalar s)
     {
-        apply([s](Dtype e) { return e / s; });
+        transform([s](Dtype e) { return e / s; });
         return *this;
     }
 
     template <typename Scalar>
     MatrixBase<Dtype, Rows, Cols, Container>& operator*=(Scalar s)
     {
-        apply([s](Dtype e) { return e * s; });
+        transform([s](Dtype e) { return e * s; });
         return *this;
     }
 
     template <typename Scalar>
     MatrixBase<Dtype, Rows, Cols, Container>& operator+=(Scalar s)
     {
-        apply([s](Dtype e) { return e + s; });
+        transform([s](Dtype e) { return e + s; });
         return *this;
     }
 
     template <typename Scalar>
     MatrixBase<Dtype, Rows, Cols, Container>& operator-=(Scalar s)
     {
-        apply([s](Dtype e) { return e - s; });
+        transform([s](Dtype e) { return e - s; });
         return *this;
     }
 
@@ -182,7 +193,7 @@ public:
     operator MatrixBase<T, Rows, Cols, Container>() const
     {
         MatrixBase<T, Rows, Cols, Container> new_m(dims);
-        new_m.apply([](auto e) { return T(e); });
+        new_m.transform([](auto e) { return T(e); });
         return new_m;
     }
 
@@ -194,24 +205,38 @@ public:
     // Min/max operations
     Dtype max(void) const
     {
-        return *std::max_element(std::begin(data_), std::end(data_));
+        auto ret = std::max_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return *ret;
     }
 
     Dtype min(void) const
     {
-        return *std::min_element(std::begin(data_), std::end(data_));
+        auto ret = std::min_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return *ret;
     }
 
     int32_t argmax() const
     {
-        auto m = std::max_element(std::begin(data_), std::end(data_));
-        return m - std::begin(data_);
+        auto ret = std::max_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return ret - std::begin(data_);
     }
 
     int32_t argmin() const
     {
-        auto m = std::min_element(std::begin(data_), std::end(data_));
-        return m - std::begin(data_);
+        auto ret = std::min_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return ret - std::begin(data_);
     }
 
 protected:

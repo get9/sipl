@@ -21,8 +21,8 @@ class VectorBase
 public:
     using value_type = Dtype;
 
-    // Need this for default initialization. All derived constructors will call
-    // this, but overwrite the value with something else
+    // All derived constructors call this, but we need to make sure the dynamic
+    // vector constructors overwrite the values for member vars
     VectorBase()
         : nelements_(Length)
         , nbytes_(nelements_ * int32_t(sizeof(Dtype)))
@@ -36,6 +36,16 @@ public:
         , data_(nelements_)
     {
         std::copy(std::begin(list), std::end(list), std::begin(data_));
+    }
+
+    template <typename OtherType>
+    VectorBase(const VectorBase<OtherType, Length, Container>& other)
+        : nelements_(other.nelements_)
+        , nbytes_(other.nbytes_)
+        , data_(other.nelements_)
+    {
+        std::transform(std::begin(other), std::end(other), std::begin(data_),
+                       [](auto e) { return Dtype(e); });
     }
 
     VectorBase(const VectorBase& other)
@@ -73,6 +83,13 @@ public:
             data_ = std::move(other.data_);
         }
         return *this;
+    }
+
+    // Convert to a different type
+    template <typename OtherType>
+    VectorBase<OtherType, Length, Container> as_type() const
+    {
+        return apply([](auto e) { return OtherType(e); });
     }
 
     bool empty() const { return nelements_ == 0; }
@@ -137,28 +154,28 @@ public:
     VectorBase& operator/=(T scalar)
     {
         assert(scalar != 0 && "divide by zero error");
-        apply([=](Dtype d) { return d / double(scalar); });
+        transform([=](Dtype d) { return d / double(scalar); });
         return *this;
     }
 
     template <typename T>
     VectorBase& operator*=(T scalar)
     {
-        apply([=](Dtype d) { return d * scalar; });
+        transform([=](Dtype d) { return d * scalar; });
         return *this;
     }
 
     template <typename T>
     VectorBase& operator+=(T scalar)
     {
-        apply([=](Dtype d) { return d + scalar; });
+        transform([=](Dtype d) { return d + scalar; });
         return *this;
     }
 
     template <typename T>
     VectorBase& operator-=(T scalar)
     {
-        apply([=](Dtype d) { return d - scalar; });
+        transform([=](Dtype d) { return d - scalar; });
         return *this;
     }
 
@@ -166,14 +183,6 @@ public:
     VectorBase operator-() const
     {
         return apply([](Dtype e) { return -e; });
-    }
-
-    // Apply a functor to each element in-place
-    template <typename Functor>
-    void apply(Functor f)
-    {
-        std::transform(std::begin(data_), std::end(data_), std::begin(data_),
-                       f);
     }
 
     // Mathematical operations
@@ -195,24 +204,38 @@ public:
 
     Dtype max(void) const
     {
-        return *std::max_element(std::begin(data_), std::end(data_));
+        auto ret = std::max_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return *ret;
     }
 
     Dtype min(void) const
     {
-        return *std::min_element(std::begin(data_), std::end(data_));
+        auto ret = std::min_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return *ret;
     }
 
     int32_t argmax() const
     {
-        auto m = std::max_element(std::begin(data_), std::end(data_));
-        return m - std::begin(data_);
+        auto ret = std::max_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return ret - std::begin(data_);
     }
 
     int32_t argmin() const
     {
-        auto m = std::min_element(std::begin(data_), std::end(data_));
-        return m - std::begin(data_);
+        auto ret = std::min_element(std::begin(data_), std::end(data_));
+        if (ret == std::end(data_)) {
+            throw std::range_error("empty vector");
+        }
+        return ret - std::begin(data_);
     }
 
     // Convert to a string representation
@@ -223,20 +246,11 @@ public:
         }
         std::stringstream ss;
         ss << "[";
-        for (int32_t i = 0; i < nelements_ - 1; ++i) {
-            ss << std::to_string(data_[i]) << ", ";
+        for (auto it = std::begin(data_); it != std::end(data_) - 1; ++it) {
+            ss << std::to_string(*it) << ", ";
         }
         ss << std::to_string(back()) << "]";
         return ss.str();
-    }
-
-    // Conversion operator
-    template <typename T>
-    operator VectorBase<T, Length, Container>() const
-    {
-        VectorBase<T, Length, Container> new_v(nelements_);
-        new_v.apply([](auto e) { return T(e); });
-        return new_v;
     }
 
     friend std::ostream& operator<<(std::ostream& s, const VectorBase& v)

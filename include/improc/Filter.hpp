@@ -11,7 +11,6 @@
 #include "matrix/Vector"
 #include "improc/Kernels.hpp"
 #include "io/BmpIO.hpp"
-#include "Util.hpp"
 
 namespace sipl
 {
@@ -100,7 +99,56 @@ MatrixX<Dtype> nonlinear_kth_filter(const MatrixX<Dtype>& img,
     return result;
 }
 
-// Threshold in-place
+// Thresholds of different types
+enum class ThresholdType {
+    KEEP_ABOVE,
+    KEEP_ABOVE_EQ,
+    KEEP_BELOW,
+    KEEP_BELOW_EQ,
+};
+
+template <typename Dtype>
+MatrixX<Dtype> threshold(const MatrixX<Dtype>& img,
+                         Dtype thresh,
+                         ThresholdType type,
+                         Dtype lower = std::numeric_limits<Dtype>::min(),
+                         Dtype upper = std::numeric_limits<Dtype>::max())
+{
+    MatrixX<Dtype> result(img.dims, 0);
+    switch (type) {
+    case ThresholdType::KEEP_ABOVE:
+        for (int32_t i = 0; i < img.dims[0]; ++i) {
+            for (int32_t j = 0; j < img.dims[1]; ++j) {
+                result(i, j) = img(i, j) > thresh ? img(i, j) : lower;
+            }
+        }
+        break;
+    case ThresholdType::KEEP_ABOVE_EQ:
+        for (int32_t i = 0; i < img.dims[0]; ++i) {
+            for (int32_t j = 0; j < img.dims[1]; ++j) {
+                result(i, j) = img(i, j) >= thresh ? img(i, j) : lower;
+            }
+        }
+        break;
+    case ThresholdType::KEEP_BELOW:
+        for (int32_t i = 0; i < img.dims[0]; ++i) {
+            for (int32_t j = 0; j < img.dims[1]; ++j) {
+                result(i, j) = img(i, j) < thresh ? img(i, j) : upper;
+            }
+        }
+        break;
+    case ThresholdType::KEEP_BELOW_EQ:
+        for (int32_t i = 0; i < img.dims[0]; ++i) {
+            for (int32_t j = 0; j < img.dims[1]; ++j) {
+                result(i, j) = img(i, j) <= thresh ? img(i, j) : upper;
+            }
+        }
+        break;
+    }
+
+    return result;
+}
+
 template <typename Dtype>
 MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, Dtype threshold)
 {
@@ -138,13 +186,11 @@ MatrixX<double> prewitt(const MatrixX<Dtype>& img)
 }
 
 template <typename Dtype>
-MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
-                     double sigma,
-                     double t1,
-                     double t2)
+MatrixX<Dtype> canny(
+    const MatrixX<Dtype>& img, double sigma, double t0, double t1, double t2)
 {
-	constexpr auto min = std::numeric_limits<Dtype>::min();
-	constexpr auto max = std::numeric_limits<Dtype>::max();
+    constexpr auto min = std::numeric_limits<Dtype>::min();
+    constexpr auto max = std::numeric_limits<Dtype>::max();
 
     // 1. Smooth with Gaussian filter defined by sigma
     auto smooth = convolve<double>(img, kernels::gaussian_kernel(sigma));
@@ -152,17 +198,19 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
     auto grad_y = convolve<double>(smooth, kernels::SobelY);
-    auto mag = math::hypot(grad_x, grad_y)
-                   .clip(min, max)
-                   .template as_type<uint8_t>();
+    auto mag =
+        math::hypot(grad_x, grad_y).clip(min, max).template as_type<uint8_t>();
     auto angle = math::atan2(grad_y, grad_x);
 
+    // 3. Initial threshold of the gradient magnitude with threshold t0
+    auto threshmag = threshold<Dtype>(mag, t0, ThresholdType::KEEP_ABOVE_EQ);
+
     // 3. Thin edges using non-maximum suppression
-    MatrixXb nonmax(mag.dims, 0);
-    for (int32_t i = 1; i < mag.dims[0] - 1; ++i) {
-        for (int32_t j = 1; j < mag.dims[1] - 1; ++j) {
+    MatrixXb nonmax(threshmag.dims, 0);
+    for (int32_t i = 1; i < threshmag.dims[0] - 1; ++i) {
+        for (int32_t j = 1; j < threshmag.dims[1] - 1; ++j) {
             // Skip zero gradient values
-            if (mag(i, j) == 0) {
+            if (threshmag(i, j) == 0) {
                 continue;
             }
 
@@ -172,34 +220,36 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
             if ((-M_PI / 8 <= a && a < 0) || (0 <= a && a < M_PI / 8) ||
                 (7 * M_PI / 8 <= a && a <= M_PI) ||
                 (-M_PI <= a && a < -7 * M_PI / 8)) {
-                if (mag(i, j - 1) < mag(i, j) && mag(i, j + 1) < mag(i, j)) {
-                    nonmax(i, j) = mag(i, j);
+                if (threshmag(i, j - 1) < threshmag(i, j) &&
+                    threshmag(i, j + 1) < threshmag(i, j)) {
+                    nonmax(i, j) = threshmag(i, j);
                 }
             }
 
             // Diagonal high to low edge
             else if ((M_PI / 8 <= a && a < 3 * M_PI / 8) ||
                      (-7 * M_PI / 8 <= a && a < -5 * M_PI / 8)) {
-                if (mag(i - 1, j - 1) < mag(i, j) &&
-                    mag(i + 1, j + 1) < mag(i, j)) {
-                    nonmax(i, j) = mag(i, j);
+                if (threshmag(i - 1, j - 1) < threshmag(i, j) &&
+                    threshmag(i + 1, j + 1) < threshmag(i, j)) {
+                    nonmax(i, j) = threshmag(i, j);
                 }
             }
 
             // Horizontal edge
             else if ((3 * M_PI / 8 <= a && a < 5 * M_PI / 8) ||
                      (-5 * M_PI / 8 <= a && a < -3 * M_PI / 8)) {
-                if (mag(i - 1, j) < mag(i, j) && mag(i + 1, j) < mag(i, j)) {
-                    nonmax(i, j) = mag(i, j);
+                if (threshmag(i - 1, j) < threshmag(i, j) &&
+                    threshmag(i + 1, j) < threshmag(i, j)) {
+                    nonmax(i, j) = threshmag(i, j);
                 }
             }
 
             // Diagonal low to high edge
             else if ((5 * M_PI / 8 <= a && a < 7 * M_PI / 8) ||
                      (-3 * M_PI / 8 <= a && a < -M_PI / 8)) {
-                if (mag(i - 1, j + 1) < mag(i, j) &&
-                    mag(i + 1, j - 1) < mag(i, j)) {
-                    nonmax(i, j) = mag(i, j);
+                if (threshmag(i - 1, j + 1) < threshmag(i, j) &&
+                    threshmag(i + 1, j - 1) < threshmag(i, j)) {
+                    nonmax(i, j) = threshmag(i, j);
                 }
             } else {
                 std::cout << "shouldn't get here" << std::endl;
@@ -212,7 +262,7 @@ MatrixX<Dtype> canny(const MatrixX<Dtype>& img,
     auto t2thresh = threshold_binary(nonmax, Dtype(t2));
 
     // 5. Link edges
-    MatrixXb linked(mag.dims, 0);
+    MatrixXb linked(threshmag.dims, 0);
     for (int32_t i = 1; i < t2thresh.dims[0] - 1; ++i) {
         for (int32_t j = 1; j < t2thresh.dims[1] - 1; ++j) {
             // Skip if t2thresh pixel is 0 - it's not an edge

@@ -39,38 +39,20 @@ public:
     }
 
     template <typename OtherType>
-    Vector(const Vector<OtherType, Length>& v)
-    {
-        this->nelements_ = v.size();
-        this->nbytes_ = v.size_in_bytes();
-        this->data_ = ContainerType();
-        std::transform(std::begin(v), std::end(v), std::begin(this->data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
-    template <typename OtherType>
     Vector<OtherType, Length> as_type() const
     {
-        const auto tmp = (*this) / double(this->max());
-        const auto max = std::numeric_limits<OtherType>::max();
-        return tmp.apply(
-            [max](auto e) { return OtherType(std::round(e * max)); });
-    }
-
-    void transform(std::function<Dtype(Dtype)> f)
-    {
-        std::transform(this->begin(), this->end(), this->begin(), f);
+        return apply([](auto e) { return OtherType(std::round(e)); });
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
-    template <
-        typename Functor,
-        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
-    decltype(auto) apply(Functor f) const
+    template <typename UnaryFunctor,
+              typename OutputType =
+                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+    decltype(auto) apply(UnaryFunctor f) const
     {
-        Vector<OutputType, Length> new_m;
-        std::transform(this->begin(), this->end(), std::begin(new_m), f);
-        return new_m;
+        Vector<OutputType, Length> new_v;
+        std::transform(this->begin(), this->end(), std::begin(new_v), f);
+        return new_v;
     }
 };
 
@@ -83,6 +65,9 @@ public:
     using ContainerType = DynamicArrayWrapper<Dtype, Dynamic>;
     using BaseClass = VectorBase<Dtype, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
+
+    Vector() = delete;
+
     // Need to use 'this' pointer below because templated base class members are
     // not visible in a certain phase of compilation. See here:
     // http://stackoverflow.com/a/6592617
@@ -102,38 +87,20 @@ public:
     }
 
     template <typename OtherType>
-    Vector(const Vector<OtherType, Dynamic>& v)
-    {
-        this->nelements_ = v.size();
-        this->nbytes_ = v.size_in_bytes();
-        this->data_ = ContainerType(this->nelements_);
-        std::transform(std::begin(v), std::end(v), std::begin(this->data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
-    template <typename OtherType>
     Vector<OtherType, Dynamic> as_type() const
     {
-        const auto tmp = (*this) / double(this->max());
-        const auto max = std::numeric_limits<OtherType>::max();
-        return tmp.apply(
-            [max](auto e) { return OtherType(std::round(e * max)); });
-    }
-
-    void transform(std::function<Dtype(Dtype)> f)
-    {
-        std::transform(this->begin(), this->end(), this->begin(), f);
+        return apply([](auto e) { return OtherType(std::round(e)); });
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
-    template <
-        typename Functor,
-        typename OutputType = typename std::result_of<Functor&(Dtype)>::type>
-    decltype(auto) apply(Functor f) const
+    template <typename UnaryFunctor,
+              typename OutputType =
+                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+    decltype(auto) apply(UnaryFunctor f) const
     {
-        Vector<OutputType, Dynamic> new_m(this->nelements_);
-        std::transform(this->begin(), this->end(), std::begin(new_m), f);
-        return new_m;
+        Vector<OutputType, Dynamic> new_v(this->nelements_);
+        std::transform(this->begin(), this->end(), std::begin(new_v), f);
+        return new_v;
     }
 };
 
