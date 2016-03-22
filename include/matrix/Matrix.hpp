@@ -62,29 +62,10 @@ public:
         }
     }
 
-    // Convert one matrix type to another
-    template <typename OtherType>
-    Matrix(const Matrix<OtherType, Rows, Cols>& other)
-    {
-        this->dims = other.dims;
-        this->nelements_ = other.size();
-        this->nbytes_ = other.size_in_bytes();
-        this->data_ = ContainerType();
-        std::transform(std::begin(other), std::end(other),
-                       std::begin(this->data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
     template <typename OtherType>
     Matrix<OtherType, Rows, Cols> as_type() const
     {
         return this->apply([](auto e) { return OtherType(e); });
-    }
-
-    template <typename UnaryFunctor>
-    void transform(UnaryFunctor f)
-    {
-        std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
@@ -193,19 +174,6 @@ public:
         }
     }
 
-    // Convert one matrix type to another
-    template <typename OtherType>
-    Matrix(const Matrix<OtherType, Dynamic, Dynamic>& other)
-    {
-        this->dims = other.dims;
-        this->nelements_ = other.size();
-        this->nbytes_ = other.size_in_bytes();
-        this->data_ = ContainerType(this->nelements_);
-        std::transform(std::begin(other), std::end(other),
-                       std::begin(this->data_),
-                       [](auto e) { return Dtype(e); });
-    }
-
     // Extract a patch centered at (center_y, center_x) with radius ry and
     // rx. Change boundaries depending on BorderType
     Matrix patch(int32_t center_y,
@@ -237,12 +205,6 @@ public:
     Matrix<OtherType, Dynamic, Dynamic> as_type() const
     {
         return this->apply([](auto e) { return OtherType(e); });
-    }
-
-    template <typename UnaryFunctor>
-    void transform(UnaryFunctor f)
-    {
-        std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
@@ -325,19 +287,6 @@ public:
         std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
     }
 
-    // Convert one matrix type to another
-    template <typename OtherType>
-    Matrix(const Matrix<Vector<OtherType, Length>, Dynamic, Dynamic>& other)
-    {
-        this->dims = other.dims;
-        this->nelements_ = other.size();
-        this->nbytes_ = other.size_in_bytes();
-        this->data_ = ContainerType(this->nelements_);
-        std::transform(std::begin(other), std::end(other),
-                       std::begin(this->data_),
-                       [](auto e) { return value_type(e); });
-    }
-
     // Extract a patch centered at (center_y, center_x) with radius ry and
     // rx. Change boundaries depending on BorderType
     Matrix patch(int32_t center_y,
@@ -363,12 +312,6 @@ public:
             }
         }
         return patch;
-    }
-
-    template <typename UnaryFunctor>
-    void transform(UnaryFunctor f)
-    {
-        std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
