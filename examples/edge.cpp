@@ -19,7 +19,7 @@ std::string g_infile;
 std::string g_outfile;
 uint8_t g_threshold = 0;
 double g_sigma = 0;
-// double g_t0 = 0;
+double g_t0 = 0;
 double g_t1 = 0;
 double g_t2 = 0;
 ActionType g_action = ActionType::UNKNOWN;
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
         break;
     }
     case ActionType::CANNY: {
-        auto filtered = canny(img, g_sigma, g_t1, g_t2);
+        auto filtered = canny(img, g_sigma, g_t0, g_t1, g_t2);
         BmpIO::write(filtered, g_outfile);
         break;
     }
@@ -90,7 +90,7 @@ void parse_commandline(int32_t argc, char** argv)
             ++i;
             g_action = ActionType::CANNY;
             g_sigma = std::stod(argv[i++]);
-            // g_t0 = std::stod(argv[i++]);
+            g_t0 = std::stod(argv[i++]);
             g_t1 = std::stod(argv[i++]);
             g_t2 = std::stod(argv[i++]);
         } else {
