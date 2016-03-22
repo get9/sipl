@@ -11,7 +11,6 @@
 #include "matrix/Vector"
 #include "improc/Kernels.hpp"
 #include "io/BmpIO.hpp"
-#include "Util.hpp"
 
 namespace sipl
 {
@@ -153,8 +152,8 @@ MatrixX<Dtype> threshold(const MatrixX<Dtype>& img,
 template <typename Dtype>
 MatrixX<Dtype> threshold_binary(const MatrixX<Dtype>& img, Dtype threshold)
 {
-    const auto min = util::min<Dtype>;
-    const auto max = util::max<Dtype>;
+    const auto min = std::numeric_limits<Dtype>::min();
+    const auto max = std::numeric_limits<Dtype>::max();
 
     if (threshold < min || threshold > max) {
         throw std::invalid_argument(
@@ -190,15 +189,17 @@ template <typename Dtype>
 MatrixX<Dtype> canny(
     const MatrixX<Dtype>& img, double sigma, double t0, double t1, double t2)
 {
+    constexpr auto min = std::numeric_limits<Dtype>::min();
+    constexpr auto max = std::numeric_limits<Dtype>::max();
+
     // 1. Smooth with Gaussian filter defined by sigma
     auto smooth = convolve<double>(img, kernels::gaussian_kernel(sigma));
 
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
     auto grad_y = convolve<double>(smooth, kernels::SobelY);
-    auto mag = math::hypot(grad_x, grad_y)
-                   .clip(util::min<Dtype>, util::max<Dtype>)
-                   .template as_type<uint8_t>();
+    auto mag =
+        math::hypot(grad_x, grad_y).clip(min, max).template as_type<uint8_t>();
     auto angle = math::atan2(grad_y, grad_x);
 
     // 3. Initial threshold of the gradient magnitude with threshold t0
@@ -290,7 +291,7 @@ MatrixX<Dtype> canny(
             while (!queue.empty()) {
                 auto p = queue.front();
                 queue.pop_front();
-                linked(p(0), p(1)) = util::max<Dtype>;
+                linked(p(0), p(1)) = max;
                 for (int32_t m = p(0) - 1; m <= p(0) + 1; ++m) {
                     for (int32_t n = p(1) - 1; n <= p(1) + 1; ++n) {
                         if (m == p(0) && n == p(1)) {

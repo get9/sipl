@@ -5,7 +5,6 @@
 #include "matrix/Matrix"
 #include "improc/Filter.hpp"
 #include "improc/Kernels.hpp"
-#include "Util.hpp"
 
 using namespace sipl;
 
@@ -39,19 +38,21 @@ int main(int argc, char** argv)
 
     // Read input files
     const auto img = BmpIO::read(g_infile);
+    constexpr auto min = std::numeric_limits<uint8_t>::min();
+    constexpr auto max = std::numeric_limits<uint8_t>::max();
 
     // Perform relevant action
     switch (g_action) {
     case ActionType::SOBEL: {
         auto grad = sobel(img);
-        auto clipped = grad.clip(util::min<uint8_t>, util::max<uint8_t>);
+        auto clipped = grad.clip(min, max);
         auto thresh = threshold_binary(clipped.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
     }
     case ActionType::PREWITT: {
         auto grad = prewitt(img);
-        auto clipped = grad.clip(util::min<uint8_t>, util::max<uint8_t>);
+        auto clipped = grad.clip(min, max);
         auto thresh = threshold_binary(clipped.as_type<uint8_t>(), g_threshold);
         BmpIO::write(thresh, g_outfile);
         break;
