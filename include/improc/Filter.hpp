@@ -107,14 +107,15 @@ enum class ThresholdType {
     KEEP_BELOW_EQ,
 };
 
-template <typename Dtype>
-MatrixX<Dtype> threshold(const MatrixX<Dtype>& img,
-                         Dtype thresh,
-                         ThresholdType type,
-                         Dtype lower = std::numeric_limits<Dtype>::min(),
-                         Dtype upper = std::numeric_limits<Dtype>::max())
+template <typename OutputType, typename InputType>
+MatrixX<OutputType> threshold(
+    const MatrixX<InputType>& img,
+    InputType thresh,
+    ThresholdType type,
+    OutputType lower = std::numeric_limits<OutputType>::min(),
+    OutputType upper = std::numeric_limits<OutputType>::max())
 {
-    MatrixX<Dtype> result(img.dims, 0);
+    MatrixX<OutputType> result(img.dims, 0);
     switch (type) {
     case ThresholdType::KEEP_ABOVE:
         for (int32_t i = 0; i < img.dims[0]; ++i) {
@@ -198,19 +199,18 @@ MatrixX<Dtype> canny(
     // 2. Compute gradient (magnitude + direction)
     auto grad_x = convolve<double>(smooth, kernels::SobelX);
     auto grad_y = convolve<double>(smooth, kernels::SobelY);
-    auto mag =
-        math::hypot(grad_x, grad_y).clip(min, max).template as_type<uint8_t>();
+    auto gradmag = math::hypot(grad_x, grad_y).clip(min, max);
     auto angle = math::atan2(grad_y, grad_x);
 
     // 3. Initial threshold of the gradient magnitude with threshold t0
-    auto threshmag = threshold<Dtype>(mag, t0, ThresholdType::KEEP_ABOVE_EQ);
+    auto mag = threshold<Dtype>(gradmag, t0, ThresholdType::KEEP_ABOVE_EQ);
 
     // 3. Thin edges using non-maximum suppression
-    MatrixXb nonmax(threshmag.dims, 0);
-    for (int32_t i = 1; i < threshmag.dims[0] - 1; ++i) {
-        for (int32_t j = 1; j < threshmag.dims[1] - 1; ++j) {
+    MatrixXb nonmax(mag.dims, 0);
+    for (int32_t i = 1; i < mag.dims[0] - 1; ++i) {
+        for (int32_t j = 1; j < mag.dims[1] - 1; ++j) {
             // Skip zero gradient values
-            if (threshmag(i, j) == 0) {
+            if (mag(i, j) == 0) {
                 continue;
             }
 
@@ -220,36 +220,34 @@ MatrixX<Dtype> canny(
             if ((-M_PI / 8 <= a && a < 0) || (0 <= a && a < M_PI / 8) ||
                 (7 * M_PI / 8 <= a && a <= M_PI) ||
                 (-M_PI <= a && a < -7 * M_PI / 8)) {
-                if (threshmag(i, j - 1) < threshmag(i, j) &&
-                    threshmag(i, j + 1) < threshmag(i, j)) {
-                    nonmax(i, j) = threshmag(i, j);
+                if (mag(i, j - 1) < mag(i, j) && mag(i, j + 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Diagonal high to low edge
             else if ((M_PI / 8 <= a && a < 3 * M_PI / 8) ||
                      (-7 * M_PI / 8 <= a && a < -5 * M_PI / 8)) {
-                if (threshmag(i - 1, j - 1) < threshmag(i, j) &&
-                    threshmag(i + 1, j + 1) < threshmag(i, j)) {
-                    nonmax(i, j) = threshmag(i, j);
+                if (mag(i - 1, j - 1) < mag(i, j) &&
+                    mag(i + 1, j + 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Horizontal edge
             else if ((3 * M_PI / 8 <= a && a < 5 * M_PI / 8) ||
                      (-5 * M_PI / 8 <= a && a < -3 * M_PI / 8)) {
-                if (threshmag(i - 1, j) < threshmag(i, j) &&
-                    threshmag(i + 1, j) < threshmag(i, j)) {
-                    nonmax(i, j) = threshmag(i, j);
+                if (mag(i - 1, j) < mag(i, j) && mag(i + 1, j) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             }
 
             // Diagonal low to high edge
             else if ((5 * M_PI / 8 <= a && a < 7 * M_PI / 8) ||
                      (-3 * M_PI / 8 <= a && a < -M_PI / 8)) {
-                if (threshmag(i - 1, j + 1) < threshmag(i, j) &&
-                    threshmag(i + 1, j - 1) < threshmag(i, j)) {
-                    nonmax(i, j) = threshmag(i, j);
+                if (mag(i - 1, j + 1) < mag(i, j) &&
+                    mag(i + 1, j - 1) < mag(i, j)) {
+                    nonmax(i, j) = mag(i, j);
                 }
             } else {
                 std::cout << "shouldn't get here" << std::endl;
@@ -257,20 +255,15 @@ MatrixX<Dtype> canny(
         }
     }
 
-    // 4. Threshold by t1, t2
-    auto t1thresh = threshold_binary(nonmax, Dtype(t1));
-    auto t2thresh = threshold_binary(nonmax, Dtype(t2));
-
-    // 5. Link edges
-    MatrixXb linked(threshmag.dims, 0);
-    for (int32_t i = 1; i < t2thresh.dims[0] - 1; ++i) {
-        for (int32_t j = 1; j < t2thresh.dims[1] - 1; ++j) {
+    // 4. Link edges
+    MatrixXb linked(mag.dims, 0);
+    for (int32_t i = 1; i < nonmax.dims[0] - 1; ++i) {
+        for (int32_t j = 1; j < nonmax.dims[1] - 1; ++j) {
             // Skip if t2thresh pixel is 0 - it's not an edge
-            if (!t2thresh(i, j)) {
+            if (nonmax(i, j) < t2) {
                 continue;
             }
-
-            linked(i, j) = t2thresh(i, j);
+            linked(i, j) = max;
 
             // Use a deque to keep track of pixels we need to track
             // 1. Fill queue with N8 of current pixel in t1thresh if they are an
@@ -281,7 +274,8 @@ MatrixX<Dtype> canny(
                     if (m == i && n == j) {
                         continue;
                     }
-                    if (t1thresh(m, n) && !t2thresh(m, n) && !linked(m, n)) {
+                    if (t1 <= nonmax(m, n) && nonmax(m, n) < t2 &&
+                        !linked(m, n)) {
                         queue.push_back({m, n});
                     }
                 }
@@ -294,12 +288,13 @@ MatrixX<Dtype> canny(
                 linked(p(0), p(1)) = max;
                 for (int32_t m = p(0) - 1; m <= p(0) + 1; ++m) {
                     for (int32_t n = p(1) - 1; n <= p(1) + 1; ++n) {
-                        if (m == p(0) && n == p(1)) {
+                        // Bounds checking/skip middle pixel
+                        if (m < 0 || m >= nonmax.dims[0] || n < 0 ||
+                            n >= nonmax.dims[1] || (m == p(0) && n == p(1))) {
                             continue;
                         }
-                        if (m >= 0 && m < t1thresh.dims[0] && n >= 0 &&
-                            n < t1thresh.dims[1] && t1thresh(m, n) &&
-                            !t2thresh(m, n) && !linked(m, n)) {
+                        if (t1 <= nonmax(m, n) && nonmax(m, n) < t2 &&
+                            !linked(m, n)) {
                             queue.push_back({m, n});
                         }
                     }
