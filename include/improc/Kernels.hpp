@@ -44,7 +44,7 @@ MatrixX<double> gaussian_kernel(double sigma, double scale = 0)
     MatrixX<double> kernel(size, size);
 
     // Cache coefficients
-    double coeff = 1.0 / std::sqrt(2 * M_PI * sigma * sigma);
+    double coeff = 1.0 / 2 * M_PI * sigma * sigma;
     double denom = 2 * sigma * sigma;
 
     // Iterates from -n ... +n where n is size / 2 (using integer division)
