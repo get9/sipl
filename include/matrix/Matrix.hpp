@@ -27,45 +27,40 @@ public:
     using BaseClass = MatrixBase<Dtype, Rows, Cols, ContainerType>;
     using BaseClass::BaseClass;
 
-    Matrix()
-    {
-        this->nelements_ = Rows * Cols;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType();
-        this->dims = {Rows, Cols};
-    }
+    // Explicitly import BaseClass member variables so we don't have to use
+    // 'this' pointer because of 2-phase lookup (see here for more information:
+    // http://stackoverflow.com/a/4643295)
+    using BaseClass::nelements_;
+    using BaseClass::nbytes_;
+    using BaseClass::data_;
+    using BaseClass::dims;
 
-    Matrix(Dtype fill_value)
+    Matrix() : BaseClass() {}
+
+    Matrix(Dtype fill_value) : BaseClass()
     {
-        this->nelements_ = Rows * Cols;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType();
-        this->dims = {Rows, Cols};
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     Matrix(std::initializer_list<std::initializer_list<Dtype>> list)
+        : BaseClass()
     {
         assert(int32_t(list.size()) == Rows && "size mismatch");
         for (const auto l : list) {
             assert(int32_t(l.size()) == Cols && "size mismatch");
         }
 
-        this->nelements_ = Rows * Cols;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType();
-        this->dims = {Rows, Cols};
         int32_t i = 0;
         for (const auto l : list) {
             std::copy(std::begin(l), std::end(l),
-                      std::begin(this->data_) + i++ * l.size());
+                      std::begin(data_) + i++ * l.size());
         }
     }
 
     template <typename OtherType>
     Matrix<OtherType, Rows, Cols> as_type() const
     {
-        return this->apply([](auto e) { return OtherType(e); });
+        return apply([](auto e) { return OtherType(e); });
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
@@ -75,18 +70,18 @@ public:
     decltype(auto) apply(UnaryFunctor f) const
     {
         Matrix<OutputType, Rows, Cols> new_m;
-        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        std::transform(std::begin(*this), std::end(*this), std::begin(new_m),
+                       f);
         return new_m;
     }
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return this->apply(
-            [ min = this->min(), max = this->max(), new_min, new_max ](auto e) {
-                return Dtype(
-                    ((new_max - new_min) / double(max - min)) * e +
-                    ((new_min * max + min * new_max) / double(max - min)));
-            });
+        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
+            auto e) {
+            return Dtype(((new_max - new_min) / double(max - min)) * e +
+                         ((new_min * max + min * new_max) / double(max - min)));
+        });
     }
 
     Matrix clip(Dtype new_min, Dtype new_max) const
@@ -120,38 +115,43 @@ public:
     using BaseClass = MatrixBase<Dtype, Dynamic, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
 
+    using BaseClass::nelements_;
+    using BaseClass::nbytes_;
+    using BaseClass::data_;
+    using BaseClass::dims;
+
     Matrix(int32_t rows, int32_t cols)
     {
-        this->nelements_ = rows * cols;
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->dims = {rows, cols};
+        nelements_ = rows * cols;
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = {rows, cols};
     }
 
     Matrix(int32_t rows, int32_t cols, Dtype fill_value)
     {
-        this->nelements_ = rows * cols;
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->dims = {rows, cols};
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        nelements_ = rows * cols;
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = {rows, cols};
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     Matrix(std::array<int32_t, 2> new_dims, Dtype fill_value)
     {
-        this->nelements_ = new_dims[0] * new_dims[1];
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->dims = new_dims;
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        nelements_ = new_dims[0] * new_dims[1];
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = new_dims;
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     Matrix(std::array<int32_t, 2> new_dims)
     {
-        this->nelements_ = new_dims[0] * new_dims[1];
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->dims = new_dims;
+        nelements_ = new_dims[0] * new_dims[1];
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = new_dims;
     }
 
     Matrix(std::initializer_list<std::initializer_list<Dtype>> list)
@@ -163,14 +163,14 @@ public:
                    "initializer_list size mismatch");
         }
 
-        this->nelements_ = nrows * ncols;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType(this->nelements_);
-        this->dims = {nrows, ncols};
+        nelements_ = nrows * ncols;
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        data_ = ContainerType(nelements_);
+        dims = {nrows, ncols};
         int32_t i = 0;
         for (const auto l : list) {
             std::copy(std::begin(l), std::end(l),
-                      std::begin(this->data_) + i++ * l.size());
+                      std::begin(data_) + i++ * l.size());
         }
     }
 
@@ -182,10 +182,8 @@ public:
                  int32_t rx,
                  const BorderType border_type = BorderType::REPLICATE) const
     {
-        assert(center_y >= 0 && center_y < this->dims[0] &&
-               "center_y out of bounds");
-        assert(center_x >= 0 && center_x < this->dims[1] &&
-               "center_x out of bounds");
+        assert(center_y >= 0 && center_y < dims[0] && "center_y out of bounds");
+        assert(center_x >= 0 && center_x < dims[1] && "center_x out of bounds");
 
         Matrix patch(2 * ry + 1, 2 * rx + 1);
         for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
@@ -204,7 +202,7 @@ public:
     template <typename OtherType>
     Matrix<OtherType, Dynamic, Dynamic> as_type() const
     {
-        return this->apply([](auto e) { return OtherType(e); });
+        return apply([](auto e) { return OtherType(e); });
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814
@@ -213,14 +211,15 @@ public:
                   typename std::result_of<UnaryFunctor&(Dtype)>::type>
     decltype(auto) apply(UnaryFunctor f) const
     {
-        Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
-        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        Matrix<OutputType, Dynamic, Dynamic> new_m(dims);
+        std::transform(std::begin(*this), std::end(*this), std::begin(new_m),
+                       f);
         return new_m;
     }
 
     Matrix clip(Dtype new_min, Dtype new_max) const
     {
-        Matrix new_m(this->dims);
+        Matrix new_m(dims);
         for (int32_t i = 0; i < this->size(); ++i) {
             auto e = std::round((*this)[i]);
             if (e < new_min) {
@@ -237,12 +236,11 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return this->apply(
-            [ min = this->min(), max = this->max(), new_min, new_max ](auto e) {
-                return Dtype(
-                    ((new_max - new_min) / double(max - min)) * e +
-                    ((new_min * max + min * new_max) / double(max - min)));
-            });
+        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
+            auto e) {
+            return Dtype(((new_max - new_min) / double(max - min)) * e +
+                         ((new_min * max + min * new_max) / double(max - min)));
+        });
     }
 };
 
@@ -262,29 +260,34 @@ public:
     using BaseClass = MatrixBase<value_type, Dynamic, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
 
+    using BaseClass::nelements_;
+    using BaseClass::nbytes_;
+    using BaseClass::data_;
+    using BaseClass::dims;
+
     Matrix(std::array<int32_t, 2> dims)
     {
-        this->nelements_ = dims[0] * dims[1];
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->dims = dims;
+        nelements_ = dims[0] * dims[1];
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = dims;
     }
 
     Matrix(int32_t rows, int32_t cols)
     {
-        this->nelements_ = rows * cols;
-        this->nbytes_ = this->nelements_ * Length * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType(this->nelements_);
-        this->dims = {rows, cols};
+        nelements_ = rows * cols;
+        nbytes_ = nelements_ * Length * int32_t(sizeof(Dtype));
+        data_ = ContainerType(nelements_);
+        dims = {rows, cols};
     }
 
     Matrix(int32_t rows, int32_t cols, value_type fill_value)
     {
-        this->nelements_ = rows * cols;
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * Length * int32_t(sizeof(Dtype));
-        this->dims = {rows, cols};
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        nelements_ = rows * cols;
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * Length * int32_t(sizeof(Dtype));
+        dims = {rows, cols};
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     // Extract a patch centered at (center_y, center_x) with radius ry and
@@ -295,10 +298,8 @@ public:
                  int32_t rx,
                  const BorderType border_type = BorderType::REPLICATE) const
     {
-        assert(center_y >= 0 && center_y < this->dims[0] &&
-               "center_y out of bounds");
-        assert(center_x >= 0 && center_x < this->dims[1] &&
-               "center_x out of bounds");
+        assert(center_y >= 0 && center_y < dims[0] && "center_y out of bounds");
+        assert(center_x >= 0 && center_x < dims[1] && "center_x out of bounds");
 
         Matrix patch(2 * ry + 1, 2 * rx + 1);
         for (int32_t y = center_y - ry, r = 0; y <= center_y + ry; ++y, ++r) {
@@ -320,8 +321,9 @@ public:
                   typename std::result_of<UnaryFunctor&(Dtype)>::type>
     decltype(auto) apply(UnaryFunctor f) const
     {
-        Matrix<OutputType, Dynamic, Dynamic> new_m(this->dims);
-        std::transform(this->begin(), this->end(), std::begin(new_m), f);
+        Matrix<OutputType, Dynamic, Dynamic> new_m(dims);
+        std::transform(std::begin(*this), std::end(*this), std::begin(new_m),
+                       f);
         return new_m;
     }
 };

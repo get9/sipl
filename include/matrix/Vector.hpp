@@ -23,19 +23,18 @@ public:
     using BaseClass = VectorBase<Dtype, Length, ContainerType>;
     using BaseClass::BaseClass;
 
-    Vector()
-    {
-        this->nelements_ = Length;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType();
-    }
+    // Explicitly import base class members so we don't have to use 'this'
+    // pointer to refer to them (see here for a detailed explanation:
+    // http://stackoverflow.com/a/4643295)
+    using BaseClass::nelements_;
+    using BaseClass::nbytes_;
+    using BaseClass::data_;
 
-    Vector(Dtype fill_value)
+    Vector() : BaseClass() {}
+
+    Vector(Dtype fill_value) : BaseClass()
     {
-        this->nelements_ = Length;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType();
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     template <typename OtherType>
@@ -51,7 +50,8 @@ public:
     decltype(auto) apply(UnaryFunctor f) const
     {
         Vector<OutputType, Length> new_v;
-        std::transform(this->begin(), this->end(), std::begin(new_v), f);
+        std::transform(std::begin(*this), std::end(*this), std::begin(new_v),
+                       f);
         return new_v;
     }
 };
@@ -66,29 +66,34 @@ public:
     using BaseClass = VectorBase<Dtype, Dynamic, ContainerType>;
     using BaseClass::BaseClass;
 
+    using BaseClass::nelements_;
+    using BaseClass::nbytes_;
+    using BaseClass::data_;
+
     Vector() = delete;
 
-    // Need to use 'this' pointer below because templated base class members are
-    // not visible in a certain phase of compilation. See here:
-    // http://stackoverflow.com/a/6592617
+    // Regular constructor for dynamically sized Vector
     Vector(int32_t size)
     {
-        this->nelements_ = size;
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        this->data_ = ContainerType(this->nelements_);
+        nelements_ = size;
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        data_ = ContainerType(nelements_);
     }
 
+    // Construct + fill
     Vector(int32_t size, Dtype fill_value)
     {
-        this->nelements_ = size;
-        this->data_ = ContainerType(this->nelements_);
-        this->nbytes_ = this->nelements_ * int32_t(sizeof(Dtype));
-        std::fill(std::begin(this->data_), std::end(this->data_), fill_value);
+        nelements_ = size;
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        std::fill(std::begin(data_), std::end(data_), fill_value);
     }
 
     template <typename OtherType>
     Vector<OtherType, Dynamic> as_type() const
     {
+        // Note: include std::round so we round floating point types to the
+        // nearest integral type
         return apply([](auto e) { return OtherType(std::round(e)); });
     }
 
@@ -98,8 +103,9 @@ public:
                   typename std::result_of<UnaryFunctor&(Dtype)>::type>
     decltype(auto) apply(UnaryFunctor f) const
     {
-        Vector<OutputType, Dynamic> new_v(this->nelements_);
-        std::transform(this->begin(), this->end(), std::begin(new_v), f);
+        Vector<OutputType, Dynamic> new_v(nelements_);
+        std::transform(std::begin(*this), std::end(*this), std::begin(new_v),
+                       f);
         return new_v;
     }
 };

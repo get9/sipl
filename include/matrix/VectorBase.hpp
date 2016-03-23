@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <cmath>
 #include <cassert>
-#include "matrix/VectorBase.hpp"
 #include "matrix/Common.hpp"
 
 namespace sipl
