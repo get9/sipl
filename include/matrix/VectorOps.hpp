@@ -3,43 +3,68 @@
 #ifndef SIPL_MATRIX_VECTOROPS_H
 #define SIPL_MATRIX_VECTOROPS_H
 
+#include "matrix/Vector"
 #include <iostream>
 
 namespace sipl
 {
 
 // Free-function operations
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator/(const Vector<T, L>& v, Scalar s)
 {
     return v.apply([s](auto e) { return e / s; });
 }
 
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator*(const Vector<T, L>& v, Scalar s)
 {
     return v.apply([s](auto e) { return e * s; });
 }
 
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator*(Scalar s, const Vector<T, L>& v)
 {
     return v * s;
 }
 
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator+(const Vector<T, L>& v, Scalar s)
 {
     return v.apply([s](auto e) { return e + s; });
 }
 
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator+(Scalar s, const Vector<T, L>& v)
 {
     return v + s;
 }
 
-template <typename T, int32_t L, typename Scalar>
+template <typename T,
+          int32_t L,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Vector<Scalar, L> operator-(Vector<T, L> v, Scalar s)
 {
     return v.apply([s](auto e) { return e - s; });

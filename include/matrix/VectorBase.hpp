@@ -3,13 +3,13 @@
 #ifndef SIPL_MATRIX_VECTORBASE_H
 #define SIPL_MATRIX_VECTORBASE_H
 
+#include "matrix/Common.hpp"
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
 #include <numeric>
 #include <sstream>
-#include <cstdlib>
-#include <cmath>
-#include <cassert>
-#include "matrix/Common.hpp"
 
 namespace sipl
 {
@@ -92,6 +92,11 @@ public:
     }
 
     bool empty() const { return nelements_ == 0; }
+
+    void fill(Dtype fillval)
+    {
+        std::fill(std::begin(data_), std::end(data_), fillval);
+    }
 
     // Iterator & element access
     Dtype* begin() { return std::begin(data_); }
@@ -182,6 +187,12 @@ public:
     VectorBase operator-() const
     {
         return apply([](Dtype e) { return -e; });
+    }
+
+    template <typename OtherType>
+    operator VectorBase<OtherType, Length, Container>()
+    {
+        return apply([](auto e) { return OtherType(e); });
     }
 
     // Mathematical operations

@@ -3,14 +3,15 @@
 #ifndef SIPL_MATRIX_MATRIXBASE_H
 #define SIPL_MATRIX_MATRIXBASE_H
 
-#include <array>
-#include <sstream>
-#include <algorithm>
-#include <cmath>
-#include <cstdlib>
-#include <cassert>
 #include "Constants.hpp"
 #include "matrix/Common.hpp"
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <numeric>
+#include <sstream>
 
 namespace sipl
 {

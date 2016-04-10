@@ -3,10 +3,11 @@
 #ifndef SIPL_MATRIX_MATRIX_H
 #define SIPL_MATRIX_MATRIX_H
 
-#include <iostream>
-#include "matrix/Wrappers.hpp"
-#include "matrix/Vector.hpp"
 #include "matrix/MatrixBase.hpp"
+#include "matrix/Vector.hpp"
+#include "matrix/Wrappers.hpp"
+#include <cmath>
+#include <iostream>
 
 namespace sipl
 {
@@ -77,8 +78,8 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
-            auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min,
+                       new_max ](auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
@@ -236,8 +237,8 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
-            auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min,
+                       new_max ](auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
@@ -265,12 +266,21 @@ public:
     using BaseClass::data_;
     using BaseClass::dims;
 
-    Matrix(std::array<int32_t, 2> dims)
+    Matrix(std::array<int32_t, 2> dims_)
     {
-        nelements_ = dims[0] * dims[1];
+        nelements_ = dims_[0] * dims_[1];
         data_ = ContainerType(nelements_);
         nbytes_ = nelements_ * int32_t(sizeof(Dtype));
-        dims = dims;
+        dims = dims_;
+    }
+
+    Matrix(std::array<int32_t, 2> dims_, Dtype fillval)
+    {
+        nelements_ = dims_[0] * dims_[1];
+        data_ = ContainerType(nelements_);
+        nbytes_ = nelements_ * int32_t(sizeof(Dtype));
+        dims = dims_;
+        std::fill(std::begin(data_), std::end(data_), fillval);
     }
 
     Matrix(int32_t rows, int32_t cols)
@@ -313,6 +323,31 @@ public:
             }
         }
         return patch;
+    }
+
+    template <typename OtherType>
+    Matrix<OtherType, Dynamic, Dynamic> as_type() const
+    {
+        return apply([](auto e) { return OtherType(e); });
+    }
+
+    Matrix clip(Dtype new_min, Dtype new_max) const
+    {
+        Matrix new_m(dims);
+        for (int32_t i = 0; i < this->size(); ++i) {
+            for (int32_t c = 0; c < new_m[0].size(); ++c) {
+                auto e = std::round((*this)[i][c]);
+                if (e < new_min) {
+                    new_m[i][c] = new_min;
+                } else if (e > new_max) {
+                    new_m[i][c] = new_max;
+                } else {
+                    new_m[i][c] = e;
+                }
+            }
+        }
+
+        return new_m;
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814

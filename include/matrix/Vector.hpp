@@ -3,12 +3,12 @@
 #ifndef SIPL_MATRIX_VECTOR_H
 #define SIPL_MATRIX_VECTOR_H
 
-#include <algorithm>
-#include <functional>
-#include <array>
-#include "matrix/Wrappers.hpp"
-#include "matrix/VectorBase.hpp"
 #include "Constants.hpp"
+#include "matrix/VectorBase.hpp"
+#include "matrix/Wrappers.hpp"
+#include <algorithm>
+#include <array>
+#include <functional>
 
 namespace sipl
 {
@@ -40,7 +40,16 @@ public:
     template <typename OtherType>
     Vector<OtherType, Length> as_type() const
     {
-        return apply([](auto e) { return OtherType(std::round(e)); });
+        return apply([](auto e) { return OtherType(e); });
+    }
+
+    template <typename OtherType>
+    Vector(const Vector<OtherType, Length>& other)
+    {
+        nelements_ = other.nelements_;
+        nbytes_ = other.nbytes_;
+        std::transform(std::begin(other), std::end(other), std::begin(data_),
+                       [](auto e) { return OtherType(e); });
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814

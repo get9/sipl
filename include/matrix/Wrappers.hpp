@@ -52,6 +52,8 @@ struct DynamicArrayWrapper {
         return *this;
     }
 
+    ~DynamicArrayWrapper() { delete[] data_; }
+
     Dtype* begin() { return data_; }
     const Dtype* begin() const { return data_; }
 

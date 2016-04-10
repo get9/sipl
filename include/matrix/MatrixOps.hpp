@@ -3,41 +3,68 @@
 #ifndef SIPL_MATRIX_MATRIXOPS_H
 #define SIPL_MATRIX_MATRIXOPS_H
 
+#include <type_traits>
+
 namespace sipl
 {
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator/(const Matrix<T, R, C>& m, Scalar s)
 {
     return m.apply([s](auto e) { return Scalar(e / s); });
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator*(const Matrix<T, R, C>& m, Scalar s)
 {
     return m.apply([s](auto e) { return Scalar(e * s); });
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator*(Scalar s, const Matrix<T, R, C>& m)
 {
     return m * s;
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator+(const Matrix<T, R, C>& m, Scalar s)
 {
     return m.apply([s](auto e) { return Scalar(e + s); });
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator+(Scalar s, const Matrix<T, R, C>& m)
 {
     return m + s;
 }
 
-template <typename T, int32_t R, int32_t C>
-Matrix<T, R, C> operator+(const Matrix<T, R, C>& m1, const Matrix<T, R, C>& m2)
+template <typename T, typename U, int32_t R, int32_t C>
+Matrix<T, R, C> operator+(const Matrix<T, R, C>& m1, const Matrix<U, R, C>& m2)
 {
     Matrix<T, R, C> new_m(m1.dims);
     for (int32_t i = 0; i < m1.size(); ++i) {
@@ -46,7 +73,12 @@ Matrix<T, R, C> operator+(const Matrix<T, R, C>& m1, const Matrix<T, R, C>& m2)
     return new_m;
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 Matrix<Scalar, R, C> operator-(const Matrix<T, R, C>& m, Scalar s)
 {
     return m.apply([s](auto e) { return Scalar(e - s); });
@@ -68,8 +100,8 @@ operator*(const Matrix<T1, R1, C1>& m1, const Matrix<T2, R2, C2>& m2)
     assert(m1.dims[1] == m2.dims[0] && "matmul size mismatch");
 
     Matrix<T1, (R1 == Dynamic || C2 == Dynamic ? Dynamic : R1),
-           (R1 == Dynamic || C2 == Dynamic ? Dynamic : C2)> mat(m1.dims[0],
-                                                                m2.dims[1]);
+           (R1 == Dynamic || C2 == Dynamic ? Dynamic : C2)>
+        mat(m1.dims[0], m2.dims[1]);
     for (int32_t row = 0; row < m1.dims[0]; ++row) {
         for (int32_t col = 0; col < m2.dims[1]; ++col) {
             T1 sum = 0;
