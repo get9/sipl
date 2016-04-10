@@ -3,6 +3,9 @@
 #ifndef SIPL_IO_IOBASE_HPP
 #define SIPL_IO_IOBASE_HPP
 
+#include <stdexcept>
+#include <string>
+
 namespace sipl
 {
 
