@@ -21,7 +21,7 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     add_compile_options(-Wno-sign-conversion)
     add_compile_options(-Wno-c++11-narrowing)
     add_compile_options(-Wimplicit-fallthrough)
-    add_compile_options(-Werror)
+    #add_compile_options(-Werror)
     #add_compile_options(-Weverything)
 endif()
 
@@ -37,10 +37,16 @@ include_directories(include)
 # Source files. After adding src subdirectory, SIPL_SOURCES should have all
 # sources
 add_subdirectory(src)
+add_subdirectory(third-party)
+include_directories(third-party/lodepng)
 
-add_executable(HW2histo examples/histogram.cpp ${SIPL_SOURCES})
-add_executable(HW2filter examples/filter_test.cpp ${SIPL_SOURCES})
-add_executable(HW1 examples/test.cpp ${SIPL_SOURCES})
+# All source files - SIPL and third-party
+set(ALL_SOURCES ${SIPL_SOURCES} ${THIRD_PARTY_SOURCES})
+
+add_executable(HW2histo examples/histogram.cpp ${ALL_SOURCES})
+add_executable(HW2filter examples/filter_test.cpp ${ALL_SOURCES})
+add_executable(HW1 examples/test.cpp ${ALL_SOURCES})
 #add_executable(vectortest examples/vector_test.cpp)# ${SIPL_SOURCES})
 #add_executable(matrixtest examples/matrix_test.cpp)# ${SIPL_SOURCES})
-add_executable(HW4edge examples/edge.cpp ${SIPL_SOURCES})
+add_executable(HW4edge examples/edge.cpp ${ALL_SOURCES})
+add_executable(pngtest examples/pngtest.cpp ${ALL_SOURCES})
