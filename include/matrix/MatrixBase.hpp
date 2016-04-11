@@ -61,6 +61,24 @@ public:
                        [](auto e) { return Dtype(e); });
     }
 
+    MatrixBase& operator=(const MatrixBase& other)
+    {
+        dims = other.dims;
+        nelements_ = other.nelements_;
+        nbytes_ = other.nbytes_;
+        data_ = other.data_;
+        return *this;
+    }
+
+    MatrixBase& operator=(MatrixBase&& other)
+    {
+        dims = std::move(other.dims);
+        nelements_ = other.nelements_;
+        nbytes_ = other.nbytes_;
+        data_ = std::move(other.data_);
+        return *this;
+    }
+
     // Iterator & element access
     Dtype* begin() { return std::begin(data_); }
     const Dtype* begin() const { return std::begin(data_); }
