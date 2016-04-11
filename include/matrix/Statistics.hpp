@@ -37,20 +37,9 @@ MatrixX<Dtype> mode(const std::vector<MatrixX<Dtype>>& mats)
 template <typename Dtype>
 MatrixX<Vector3d> average(const std::vector<MatrixX<Dtype>>& mats)
 {
-    MatrixX<Vector3d> avg(mats[0].dims, 0.0);
-    for (size_t j = 0; j < mats.size(); ++j) {
-        for (int32_t i = 0; i < avg.size(); ++i) {
-            for (int32_t c = 0; c < 3; ++c) {
-                avg[i][c] += mats[j][i][c];
-            }
-        }
-    }
-    for (auto& p : avg) {
-        for (int32_t c = 0; c < 3; ++c) {
-            p[c] /= mats.size();
-        }
-    }
-    return avg;
+    MatrixX<Vector3d> init(mats[0].dims, 0.0);
+    auto sum = std::accumulate(std::begin(mats), std::end(mats), init);
+    return sum / mats.size();
 }
 }
 

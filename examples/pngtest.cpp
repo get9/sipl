@@ -32,10 +32,11 @@ int main(int argc, char** argv)
         imgs.push_back(read_png_downsample2(filenames[i]));
     }
 
-    auto avg_img = average(imgs).clip(0, 255);
-
     // Compute mode img
-    PngIO::write(avg_img.as_type<RgbPixel>(), "mode.png");
+    auto avg = average(imgs);
+    auto diff = math::abs(imgs[0] - avg).clip(0, 255).as_type<RgbPixel>();
+
+    PngIO::write(diff, "mode.png");
 }
 
 void parse_commandline(char** argv)
