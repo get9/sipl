@@ -11,71 +11,62 @@ namespace sipl
 
 // Free-function operations
 template <typename T,
-          int32_t L,
+          int32_t Length,
           typename Scalar,
           typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
                                              Scalar>::type>
-Vector<Scalar, L> operator/(const Vector<T, L>& v, Scalar s)
+auto operator/(const Vector<T, Length>& v, Scalar s)
+    -> Vector<decltype(v.front() / s), Length>
 {
     return v.apply([s](auto e) { return e / s; });
 }
 
-template <typename T,
-          int32_t L,
-          typename Scalar,
-          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
-                                             Scalar>::type>
-Vector<Scalar, L> operator*(const Vector<T, L>& v, Scalar s)
+template <typename T, int32_t Length, typename Scalar>
+auto operator*(const Vector<T, Length>& v, Scalar s)
+    -> Vector<decltype(v.front() * s), Length>
 {
     return v.apply([s](auto e) { return e * s; });
 }
 
-template <typename T,
-          int32_t L,
-          typename Scalar,
-          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
-                                             Scalar>::type>
-Vector<Scalar, L> operator*(Scalar s, const Vector<T, L>& v)
+template <typename T, int32_t Length, typename Scalar>
+auto operator*(Scalar s, const Vector<T, Length>& v)
+    -> Vector<decltype(v.front() * s), Length>
 {
     return v * s;
 }
 
-template <typename T,
-          int32_t L,
-          typename Scalar,
-          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
-                                             Scalar>::type>
-Vector<Scalar, L> operator+(const Vector<T, L>& v, Scalar s)
+template <typename T, int32_t Length, typename Scalar>
+auto operator+(const Vector<T, Length>& v, Scalar s)
+    -> Vector<decltype(v.front() + s), Length>
 {
     return v.apply([s](auto e) { return e + s; });
 }
 
-template <typename T,
-          int32_t L,
-          typename Scalar,
-          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
-                                             Scalar>::type>
-Vector<Scalar, L> operator+(Scalar s, const Vector<T, L>& v)
+template <typename T, int32_t Length, typename Scalar>
+auto operator+(Scalar s, const Vector<T, Length>& v)
+    -> Vector<decltype(v.front() + s), Length>
 {
     return v + s;
 }
 
-template <typename T,
-          int32_t L,
-          typename Scalar,
-          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
-                                             Scalar>::type>
-Vector<Scalar, L> operator-(Vector<T, L> v, Scalar s)
+template <typename T, int32_t Length, typename Scalar>
+auto operator-(const Vector<T, Length>& v, Scalar s)
+    -> Vector<decltype(v.front() - s), Length>
 {
     return v.apply([s](auto e) { return e - s; });
 }
 
 // Operators for vectors of different types
-template <typename T1, int32_t L1, typename T2, int32_t L2>
-Vector<T1, L1> operator+(const Vector<T1, L1>& v1, const Vector<T2, L2>& v2)
+template <typename T1,
+          int32_t L1,
+          typename T2,
+          int32_t L2,
+          int32_t ResultLength = L1 == Dynamic || L2 == Dynamic ? Dynamic : L1>
+auto operator+(const Vector<T1, L1>& v1, const Vector<T2, L2>& v2)
+    -> Vector<decltype(v1.front() + v2.front()), ResultLength>
 {
     assert(v1.size() == v2.size() && "size mismatch");
-    Vector<T1, L1> new_v(v1.size());
+    Vector<T1, ResultLength> new_v(v1.size());
     for (int32_t i = 0; i < v1.size(); ++i) {
         new_v[i] = v1[i] + v2[i];
     }
@@ -83,11 +74,17 @@ Vector<T1, L1> operator+(const Vector<T1, L1>& v1, const Vector<T2, L2>& v2)
 }
 
 // Operators for vectors of different types
-template <typename T1, int32_t L1, typename T2, int32_t L2>
-Vector<T1, L1> operator-(const Vector<T1, L1>& v1, const Vector<T2, L2>& v2)
+template <typename T1,
+          int32_t L1,
+          typename T2,
+          int32_t L2,
+          int32_t ResultLength = L1 == Dynamic || L2 == Dynamic ? Dynamic : L1>
+auto operator-(const Vector<T1, L1>& v1, const Vector<T2, L2>& v2)
+    -> Vector<decltype(v1.front() - v2.front()), ResultLength>
 {
     assert(v1.size() == v2.size() && "size mismatch");
-    Vector<T1, L1> new_v(v1.size());
+    using ResultType = decltype(v1.front() - v2.front());
+    Vector<ResultType, ResultLength> new_v(v1.size());
     for (int32_t i = 0; i < v1.size(); ++i) {
         new_v[i] = v1[i] - v2[i];
     }
