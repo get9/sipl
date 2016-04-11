@@ -78,8 +78,8 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min,
-                       new_max ](auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
+            auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
@@ -237,8 +237,8 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min,
-                       new_max ](auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
+            auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
@@ -350,10 +350,27 @@ public:
         return new_m;
     }
 
+    std::string str() const
+    {
+        std::stringstream ss;
+        ss << "[";
+        for (int32_t i = 0; i < dims[0] - 1; ++i) {
+            for (int32_t j = 0; j < dims[1] - 1; ++j) {
+                ss << (*this)(i, j) << " ";
+            }
+            ss << (*this)(i, dims[1] - 1) << ";" << std::endl;
+        }
+        for (int32_t j = 0; j < dims[1] - 1; ++j) {
+            ss << (*this)(dims[0] - 1, j) << " ";
+        }
+        ss << this->back() << "]";
+        return ss.str();
+    }
+
     // Template magic from: http://stackoverflow.com/a/26383814
     template <typename UnaryFunctor,
-              typename OutputType =
-                  typename std::result_of<UnaryFunctor&(Dtype)>::type>
+              typename OutputType = typename std::result_of<
+                  UnaryFunctor&(Vector<Dtype, Length>)>::type>
     decltype(auto) apply(UnaryFunctor f) const
     {
         Matrix<OutputType, Dynamic, Dynamic> new_m(dims);
