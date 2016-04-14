@@ -3,6 +3,7 @@ import glob
 import os.path
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
 
 def bresenham(start, end):
     # Setup initial conditions
@@ -71,6 +72,9 @@ def draw_img_with_target_line(img, start, end):
 def to_uint8(m):
     return np.clip(m, 0, 255).astype(np.uint8)
 
+def float_to_uint8(m):
+    return ((m / m.max()) * 255).astype(np.uint8)
+
 def main():
     if len(sys.argv) < 6:
         print("Usage:")
@@ -91,10 +95,11 @@ def main():
     fgs = []
     for i in stack:
         gray = cv2.cvtColor(to_uint8(np.abs(i - bg)), cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray = cv2.Laplacian(gray, cv2.CV_8U)
+        _, gray = cv2.threshold(gray, int(0.09 * 255), 255, cv2.THRESH_BINARY)
         fgs.append(to_uint8(gray))
     
-    # Calculate temporal mode for each pixel
+    # Calculate sagittal image
     slice_img = np.zeros((len(stack) * 2, len(line_idxs)), dtype=np.uint8)
     for i, fg in enumerate(fgs):
         for j, (x, y) in enumerate(line_idxs):
@@ -118,15 +123,27 @@ def main():
         #draw_img_with_target_line(gray, (startx, starty), (endx, endy))
 
     #_, slice_img = cv2.threshold(slice_img, int(0.10 * 255), 255, cv2.THRESH_TOZERO)
-    slice_img = cv2.normalize(slice_img, slice_img, 0, 255, cv2.NORM_MINMAX)
+    #slice_img = cv2.normalize(slice_img, slice_img, 0, 255, cv2.NORM_MINMAX)
 
     cv2.namedWindow("reslice gray", cv2.WINDOW_NORMAL)
     cv2.imshow("reslice gray", slice_img)
 
-    _, slice_img = cv2.threshold(slice_img, int(0.25 * 255), 255, cv2.THRESH_BINARY)
-    slice_img = cv2.medianBlur(slice_img, 5)
-    ##ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 5))
-    #slice_img = cv2.morphologyEx(slice_img, cv2.MORPH_CLOSE, np.ones((5, 5), dtype=np.uint8))
+    #plt.hist(slice_img.ravel(), 256, [0, 256])
+    #plt.show()
+    #cv2.waitKey()
+    #sys.exit()
+
+    #_, slice_img = cv2.threshold(slice_img, int(0.75 * 255), 255, cv2.THRESH_BINARY)
+    #slice_img = cv2.medianBlur(slice_img, 5)
+    diamond = np.array([[0, 0, 1, 0, 0],
+                        [0, 1, 1, 1, 0],
+                        [1, 1, 1, 1, 1],
+                        [0, 1, 1, 1, 0],
+                        [0, 0, 1, 0, 0]], dtype=np.uint8)
+    kwidth = int(len(line_idxs) * 0.05)
+    square = np.ones((kwidth, kwidth), dtype=np.uint8)
+    ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kwidth, kwidth))
+    slice_img = cv2.morphologyEx(slice_img, cv2.MORPH_CLOSE, ellipse)
 
     cv2.namedWindow("reslice binary", cv2.WINDOW_NORMAL)
     cv2.imshow("reslice binary", slice_img)
