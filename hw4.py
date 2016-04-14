@@ -3,7 +3,7 @@ import glob
 import os.path
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 def bresenham(start, end):
     # Setup initial conditions
@@ -89,64 +89,43 @@ def main():
 
     line_idxs = bresenham((startx, starty), (endx, endy))
 
-    # Calculate average image
+    # Calculate median image
     bg = np.median(stack, axis=0)
 
+    # Preprocess each input image by thresholding away low 5% of the image
     fgs = []
     for i in stack:
         gray = cv2.cvtColor(to_uint8(np.abs(i - bg)), cv2.COLOR_BGR2GRAY)
-        gray = cv2.Laplacian(gray, cv2.CV_8U)
-        _, gray = cv2.threshold(gray, int(0.09 * 255), 255, cv2.THRESH_BINARY)
+        _, gray = cv2.threshold(gray, int(0.05 * 255), 255, cv2.THRESH_BINARY)
         fgs.append(to_uint8(gray))
     
-    # Calculate sagittal image
+    # Create sagittal image
     slice_img = np.zeros((len(stack) * 2, len(line_idxs)), dtype=np.uint8)
     for i, fg in enumerate(fgs):
         for j, (x, y) in enumerate(line_idxs):
             slice_img[2 * i, j] = fg[y, x]
             slice_img[2 * i + 1, j] = fg[y, x]
 
-        # Subtract temporal average from the image
-        #fg = to_uint8(np.abs(i - bg))
 
-        #gray = cv2.cvtColor(fg, cv2.COLOR_BGR2GRAY)
-        #gray = cv2.normalize(gray, gray, 0, 255, cv2.NORM_MINMAX)
+    # Median blur
+    median_ksize = int(0.05 * len(line_idxs))
+    if (median_ksize % 2 == 0):
+        median_ksize += 1
+    slice_img = cv2.medianBlur(slice_img, median_ksize)
 
-        ## Threshold
-        #_, gray = cv2.threshold(gray, int(255 * 0.17), 255, cv2.THRESH_BINARY)
-
-        ##gray = cv2.dilate(gray, np.ones((3, 3)))
-        ##gray = cv2.erode(gray, rect_kernel)
-        #gray = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, np.ones((3, 3)))
-        ##nlabels, label_img = cv2.connectedComponents(gray, 8)
-
-        #draw_img_with_target_line(gray, (startx, starty), (endx, endy))
-
-    #_, slice_img = cv2.threshold(slice_img, int(0.10 * 255), 255, cv2.THRESH_TOZERO)
-    #slice_img = cv2.normalize(slice_img, slice_img, 0, 255, cv2.NORM_MINMAX)
-
-    cv2.namedWindow("reslice gray", cv2.WINDOW_NORMAL)
-    cv2.imshow("reslice gray", slice_img)
-
-    #plt.hist(slice_img.ravel(), 256, [0, 256])
-    #plt.show()
-    #cv2.waitKey()
-    #sys.exit()
-
-    #_, slice_img = cv2.threshold(slice_img, int(0.75 * 255), 255, cv2.THRESH_BINARY)
-    #slice_img = cv2.medianBlur(slice_img, 5)
-    diamond = np.array([[0, 0, 1, 0, 0],
-                        [0, 1, 1, 1, 0],
-                        [1, 1, 1, 1, 1],
-                        [0, 1, 1, 1, 0],
-                        [0, 0, 1, 0, 0]], dtype=np.uint8)
-    kwidth = int(len(line_idxs) * 0.05)
-    square = np.ones((kwidth, kwidth), dtype=np.uint8)
-    ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kwidth, kwidth))
+    # Morphological close to stitch together blobs
+    morph_ksize = int(0.025 * len(line_idxs))
+    if (morph_ksize % 2 == 0):
+        morph_ksize += 1
+    ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (morph_ksize, morph_ksize))
     slice_img = cv2.morphologyEx(slice_img, cv2.MORPH_CLOSE, ellipse)
 
-    cv2.namedWindow("reslice binary", cv2.WINDOW_NORMAL)
-    cv2.imshow("reslice binary", slice_img)
+    # Connected components - count how many blobs
+    count, _ = cv2.connectedComponents(slice_img, 8)
+    print(count - 1)
+
+    cv2.namedWindow("slice image morph", cv2.WINDOW_NORMAL)
+    cv2.imshow("slice image morph", slice_img)
     cv2.waitKey()
 
 main()
