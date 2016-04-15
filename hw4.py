@@ -63,7 +63,7 @@ def read_image_dir(image_dir, downsample_factor=1):
     return np.array(mats)
 
 def draw_img_with_target_line(img, start, end):
-    #img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     img = cv2.line(img, start, end, (0, 0, 255))
     cv2.imshow("image", img)
     cv2.waitKey()
@@ -95,6 +95,7 @@ def main():
     fgs = []
     for i in stack:
         gray = cv2.cvtColor(to_uint8(np.abs(i - bg)), cv2.COLOR_BGR2GRAY)
+        draw_img_with_target_line(gray, (startx, starty), (endx, endy))
         _, gray = cv2.threshold(gray, int(0.05 * 255), 255, cv2.THRESH_BINARY)
         fgs.append(to_uint8(gray))
     
