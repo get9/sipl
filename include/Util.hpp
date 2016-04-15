@@ -3,6 +3,7 @@
 #ifndef SIPL_UTIL_H
 #define SIPL_UTIL_H
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
 #include <limits>

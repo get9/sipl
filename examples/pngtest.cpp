@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-size_t start_x, start_y, end_x, end_y;
+int32_t start_x, start_y, end_x, end_y;
 int32_t img_start, img_count;
 std::string format;
 
