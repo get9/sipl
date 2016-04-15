@@ -78,8 +78,8 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
-            auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min,
+                       new_max ](auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
@@ -101,6 +101,8 @@ public:
 
         return new_m;
     }
+
+    static Matrix Ones() { return Matrix(Dtype(1)); }
 };
 
 // Specialization of the above for dynamically-allocated matrices.
@@ -237,11 +239,21 @@ public:
 
     Matrix rescale(Dtype new_min, Dtype new_max) const
     {
-        return apply([ min = this->min(), max = this->max(), new_min, new_max ](
-            auto e) {
+        return apply([ min = this->min(), max = this->max(), new_min,
+                       new_max ](auto e) {
             return Dtype(((new_max - new_min) / double(max - min)) * e +
                          ((new_min * max + min * new_max) / double(max - min)));
         });
+    }
+
+    static Matrix Ones(int32_t height, int32_t width)
+    {
+        return Matrix(height, width, Dtype(1));
+    }
+
+    static Matrix Ones(const std::array<int32_t, 2>& dims)
+    {
+        return Matrix(dims, Dtype(1));
     }
 };
 
