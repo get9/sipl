@@ -21,35 +21,55 @@ auto operator/(const Vector<T, Length>& v, Scalar s)
     return v.apply([s](auto e) { return e / s; });
 }
 
-template <typename T, int32_t Length, typename Scalar>
+template <typename T,
+          int32_t Length,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator*(const Vector<T, Length>& v, Scalar s)
     -> Vector<decltype(v.front() * s), Length>
 {
     return v.apply([s](auto e) { return e * s; });
 }
 
-template <typename T, int32_t Length, typename Scalar>
+template <typename T,
+          int32_t Length,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator*(Scalar s, const Vector<T, Length>& v)
     -> Vector<decltype(v.front() * s), Length>
 {
     return v * s;
 }
 
-template <typename T, int32_t Length, typename Scalar>
+template <typename T,
+          int32_t Length,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator+(const Vector<T, Length>& v, Scalar s)
     -> Vector<decltype(v.front() + s), Length>
 {
     return v.apply([s](auto e) { return e + s; });
 }
 
-template <typename T, int32_t Length, typename Scalar>
+template <typename T,
+          int32_t Length,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator+(Scalar s, const Vector<T, Length>& v)
     -> Vector<decltype(v.front() + s), Length>
 {
     return v + s;
 }
 
-template <typename T, int32_t Length, typename Scalar>
+template <typename T,
+          int32_t Length,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator-(const Vector<T, Length>& v, Scalar s)
     -> Vector<decltype(v.front() - s), Length>
 {

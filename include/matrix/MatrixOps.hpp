@@ -44,14 +44,24 @@ auto operator*(Scalar s, const Matrix<T, R, C>& m)
     return m * s;
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator+(const Matrix<T, R, C>& m, Scalar s)
     -> Matrix<decltype(m.front() + s), R, C>
 {
     return m.apply([s](auto e) { return e + s; });
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator+(Scalar s, const Matrix<T, R, C>& m)
     -> Matrix<decltype(m.front() + s), R, C>
 {
@@ -82,7 +92,12 @@ auto operator-(const Matrix<T, R, C>& m1, const Matrix<U, R, C>& m2)
     return new_m;
 }
 
-template <typename T, int32_t R, int32_t C, typename Scalar>
+template <typename T,
+          int32_t R,
+          int32_t C,
+          typename Scalar,
+          typename = typename std::enable_if<std::is_arithmetic<Scalar>::value,
+                                             Scalar>::type>
 auto operator-(const Matrix<T, R, C>& m, Scalar s)
     -> Matrix<decltype(m.front() - s), R, C>
 {
