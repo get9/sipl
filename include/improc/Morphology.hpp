@@ -83,6 +83,18 @@ MatrixX<Dtype> dilate(const MatrixX<Dtype>& img, const MatrixXb& element)
 
     return new_img;
 }
+
+template <typename Dtype>
+MatrixX<Dtype> open(const MatrixX<Dtype>& img, const MatrixXb& element)
+{
+    return dilate(erode(img, element), element);
+}
+
+template <typename Dtype>
+MatrixX<Dtype> close(const MatrixX<Dtype>& img, const MatrixXb& element)
+{
+    return erode(dilate(img, element), element);
+}
 }
 }
 
