@@ -5,8 +5,8 @@
 
 #include "improc/Histogram.hpp"
 #include "matrix/Matrix"
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 namespace sipl
 {
@@ -26,7 +26,6 @@ MatrixX<Dtype> mode(const std::vector<MatrixX<Dtype>>& mats)
             }
             d[c] = hist.argmax();
         }
-        std::cout << i << "/" << mats[0].size() << std::endl;
 
         mat[i] = d;
         hist.fill(0);
@@ -36,11 +35,11 @@ MatrixX<Dtype> mode(const std::vector<MatrixX<Dtype>>& mats)
 }
 
 template <typename Dtype>
-MatrixX<Dtype> average(const std::vector<MatrixX<Dtype>>& mats)
+MatrixXd average(const std::vector<MatrixX<Dtype>>& mats)
 {
-    MatrixX<Dtype> init(mats[0].dims, 0.0);
+    MatrixXd init(mats[0].dims, 0.0);
     auto sum = std::accumulate(std::begin(mats), std::end(mats), init);
-    return sum / mats.size();
+    return sum / double(mats.size());
 }
 
 template <typename Dtype>
