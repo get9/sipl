@@ -1,6 +1,7 @@
 #include "io/PngIO.hpp"
 #include "io/PpmIO.hpp"
 #include "matrix/Statistics.hpp"
+#include "improc/Filter.hpp"
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -19,24 +20,22 @@ std::vector<std::string> generate_filenames(const std::string& format,
                                             int32_t start,
                                             int32_t count);
 
-MatrixX<RgbPixel> read_png_downsample2(const std::string& filename);
+std::vector<MatrixXb> read_video_dir(const std::vector<std::string>& filenames);
 
 int main(int argc, char** argv)
 {
     parse_commandline(argv);
+
+    // Read in PNG's, convert to grayscale
     auto filenames = generate_filenames(format, img_start, img_count);
+    auto grays = read_video_dir(filenames);
 
-    std::vector<MatrixX<RgbPixel>> imgs;
-    imgs.reserve(filenames.size() / 2);
-    for (size_t i = 0; i < filenames.size(); i += 2) {
-        imgs.push_back(read_png_downsample2(filenames[i]));
-    }
+    // Compute median img
+    auto avg = median(grays);
+    std::cout << "done computing median" << std::endl;
+    auto diff = math::abs(grays[0] - avg).clip(0, 255).as_type<RgbPixel>();
 
-    // Compute mode img
-    auto avg = average(imgs);
-    auto diff = math::abs(imgs[0] - avg).clip(0, 255).as_type<RgbPixel>();
-
-    PngIO::write(diff, "mode.png");
+    PngIO::write(diff, "median.png");
 }
 
 void parse_commandline(char** argv)
@@ -67,23 +66,16 @@ std::vector<std::string> generate_filenames(const std::string& format,
     return filenames;
 }
 
-MatrixX<RgbPixel> read_png_downsample2(const std::string& filename)
+std::vector<MatrixXb> read_video_dir(const std::vector<std::string>& filenames)
 {
-    std::vector<uint8_t> pixels;
-    uint32_t width, height;
-    auto error = lodepng::decode(pixels, width, height, filename,
-                                 LodePNGColorType::LCT_RGB, 8);
-    if (error) {
-        throw std::runtime_error("could not read png");
+    std::vector<MatrixXb> gray_pngs;
+    gray_pngs.reserve(filenames.size());
+    for (const auto& f : filenames) {
+        auto color = PngIO::read(f);
+        std::cout << "read: " << f << std::endl;
+        gray_pngs.push_back(color_to_grayscale(color));
     }
+    std::cout << "Done with reading" << std::endl;
 
-    MatrixX<RgbPixel> mat(height / 2, width / 2);
-    for (size_t i = 0, r = 0; i < height; i += 2, ++r) {
-        for (size_t j = 0, c = 0; j < width; j += 2, ++c) {
-            mat(r, c)[0] = pixels[i * width * 3 + j * 3 + 0];
-            mat(r, c)[1] = pixels[i * width * 3 + j * 3 + 1];
-            mat(r, c)[2] = pixels[i * width * 3 + j * 3 + 2];
-        }
-    }
-    return mat;
+    return gray_pngs;
 }

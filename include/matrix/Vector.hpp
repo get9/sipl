@@ -63,6 +63,17 @@ public:
                        f);
         return new_v;
     }
+
+    template <typename OtherType>
+    auto dot(const Vector<OtherType, Length>& other) const
+        -> decltype(this->front() * other.front())
+    {
+        Vector<decltype(this->front() * other.front()), Length> new_v;
+        for (int32_t i = 0; i < other.size(); ++i) {
+            new_v[i] = (*this)[i] * other[i];
+        }
+        return new_v.sum();
+    }
 };
 
 // Specialization of the above for dynamically-allocated Vector.
@@ -104,6 +115,18 @@ public:
         // Note: include std::round so we round floating point types to the
         // nearest integral type
         return apply([](auto e) { return OtherType(std::round(e)); });
+    }
+
+    template <typename OtherType>
+    auto dot(const Vector<OtherType, Dynamic>& other) const
+        -> decltype(this->front() * other.front())
+    {
+        Vector<decltype(this->front() * other.front()), Dynamic> new_v(
+            other.size());
+        for (int32_t i = 0; i < other.size(); ++i) {
+            new_v[i] = (*this)[i] * other[i];
+        }
+        return new_v.sum();
     }
 
     // Template magic from: http://stackoverflow.com/a/26383814

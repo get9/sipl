@@ -3,7 +3,6 @@ import glob
 import os.path
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 def bresenham(start, end):
     # Setup initial conditions

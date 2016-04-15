@@ -309,11 +309,10 @@ MatrixX<Dtype> canny(
 // Convert a color image to grayscale
 MatrixXb color_to_grayscale(const MatrixX<RgbPixel>& color)
 {
-    MatrixXb grayscale(color.dims[0], color.dims[1]);
+    static Vector3d coeffs{0.299, 0.587, 0.114};
+    MatrixXb grayscale(color.dims);
     for (int32_t i = 0; i < color.size(); ++i) {
-        RgbPixel p(color[i]);
-        grayscale[i] =
-            clamp<uint8_t>(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]);
+        grayscale[i] = clamp<uint8_t>(color[i].dot(coeffs));
     }
     return grayscale;
 }

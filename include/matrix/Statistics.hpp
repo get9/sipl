@@ -6,6 +6,7 @@
 #include "improc/Histogram.hpp"
 #include "matrix/Matrix"
 #include <vector>
+#include <algorithm>
 
 namespace sipl
 {
@@ -35,11 +36,31 @@ MatrixX<Dtype> mode(const std::vector<MatrixX<Dtype>>& mats)
 }
 
 template <typename Dtype>
-MatrixX<Vector3d> average(const std::vector<MatrixX<Dtype>>& mats)
+MatrixX<Dtype> average(const std::vector<MatrixX<Dtype>>& mats)
 {
-    MatrixX<Vector3d> init(mats[0].dims, 0.0);
+    MatrixX<Dtype> init(mats[0].dims, 0.0);
     auto sum = std::accumulate(std::begin(mats), std::end(mats), init);
     return sum / mats.size();
+}
+
+template <typename Dtype>
+MatrixX<Dtype> median(const std::vector<MatrixX<Dtype>>& mats)
+{
+    auto dims = mats[0].dims;
+    MatrixX<Dtype> med(dims[0] / 2, dims[1] / 2);
+    for (int32_t i = 0, a = 0; i < dims[0]; i += 2, ++a) {
+        for (int32_t j = 0, b = 0; j < dims[1]; j += 2, ++b) {
+            std::vector<Dtype> pixels(mats.size());
+            std::transform(std::begin(mats), std::end(mats), std::begin(pixels),
+                           [i, j](auto e) { return e(i, j); });
+            std::nth_element(std::begin(pixels),
+                             std::begin(pixels) + pixels.size() / 2,
+                             std::end(pixels));
+            med(a, b) = pixels[pixels.size() / 2];
+        }
+    }
+
+    return med;
 }
 }
 

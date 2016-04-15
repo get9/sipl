@@ -248,6 +248,11 @@ public:
         return ret - std::begin(data_);
     }
 
+    Dtype sum() const
+    {
+        return std::accumulate(std::begin(data_), std::end(data_), Dtype(0));
+    }
+
     // Convert to a string representation
     std::string str() const
     {
