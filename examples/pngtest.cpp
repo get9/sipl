@@ -1,4 +1,6 @@
+#include "Util.hpp"
 #include "improc/Filter.hpp"
+#include "improc/Label.hpp"
 #include "improc/Morphology.hpp"
 #include "io/PgmIO.hpp"
 #include "io/PngIO.hpp"
@@ -8,8 +10,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-using namespace sipl;
 
 size_t start_x, start_y, end_x, end_y;
 int32_t img_start, img_count;
@@ -21,9 +21,19 @@ std::vector<std::string> generate_filenames(const std::string& format,
                                             int32_t start,
                                             int32_t count);
 
-std::vector<MatrixXb> read_video_dir(const std::vector<std::string>& filenames);
+std::vector<sipl::MatrixXb> read_video_dir(
+    const std::vector<std::string>& filenames);
 
-std::vector<Vector2i> bresenham(const Vector2i& p1, const Vector2i& p2);
+std::vector<sipl::Vector2i> bresenham(const sipl::Vector2i& p1,
+                                      const sipl::Vector2i& p2);
+
+double average_mass(const std::vector<sipl::Component>& cs);
+
+constexpr uint8_t THRESH_VAL = uint8_t(0.0875 * 255);
+constexpr double MORPH_KERNEL_SIZE_PERC = 0.03;
+constexpr double REMOVE_BLOB_MASS_PERC = 0.2;
+constexpr double SPLIT_BLOB_FACTOR = 1.5;
+constexpr double BLOB_MERGE_FACTOR = 0.02;
 
 int main(int argc, char** argv)
 {
@@ -34,23 +44,25 @@ int main(int argc, char** argv)
     auto grays = read_video_dir(filenames);
 
     // Compute average img
-    auto avg = average(grays);
+    auto avg = sipl::average(grays);
 
     // Compute sagittal view
     auto points = bresenham({start_x, start_y}, {end_x, end_y});
-    MatrixXb slice_img(grays.size() * 2, points.size());
+    sipl::MatrixXb slice_img(grays.size() * 2, points.size());
     for (size_t i = 0; i < grays.size(); ++i) {
 
         // Subtract background
-        auto diff = math::abs(grays[i] - avg).clip(0, 255).as_type<uint8_t>();
+        auto diff =
+            sipl::math::abs(grays[i] - avg).clip(0, 255).as_type<uint8_t>();
 
         // Threshold away low 10%
-        auto thresh = threshold_binary(diff, uint8_t(0.1 * 255));
+        auto thresh_img = sipl::threshold_binary(diff, THRESH_VAL);
         for (size_t p = 0; p < points.size(); ++p) {
-            slice_img(2 * i, p) = thresh(points[p][1], points[p][0]);
-            slice_img(2 * i + 1, p) = thresh(points[p][1], points[p][0]);
+            slice_img(2 * i, p) = thresh_img(points[p][1], points[p][0]);
+            slice_img(2 * i + 1, p) = thresh_img(points[p][1], points[p][0]);
         }
     }
+    sipl::PgmIO::write(slice_img, "01_sub_bg_thresh.pgm");
 
     // Median blur
     auto median_ksize = int32_t(0.02 * points.size());
@@ -58,14 +70,74 @@ int main(int argc, char** argv)
         median_ksize += 1;
     }
     std::cout << "median filter size: " << median_ksize << std::endl;
-    slice_img = median_filter(slice_img, median_ksize, median_ksize);
+    slice_img = sipl::median_filter(slice_img, median_ksize, median_ksize);
+    sipl::PgmIO::write(slice_img, "02_med_filter.pgm");
 
     // Dilate by square
-    auto morph_ksize = int32_t(0.04 * points.size());
-    slice_img = morphology::dilate(
-        slice_img, morphology::kernels::rectangle(morph_ksize, morph_ksize));
+    auto morph_ksize = int32_t(MORPH_KERNEL_SIZE_PERC * points.size());
+    std::cout << "morphology kernel size: " << morph_ksize << std::endl;
+    slice_img = sipl::morphology::dilate(
+        slice_img,
+        sipl::morphology::kernels::rectangle(morph_ksize, morph_ksize));
+    sipl::PgmIO::write(slice_img, "03_morph.pgm");
 
-    PgmIO::write(slice_img, "reslice.pgm");
+    // Find connected components
+    auto components =
+        sipl::connected_components(slice_img, sipl::Connectivity::N8);
+    std::cout << "# raw components: " << components.size() << std::endl;
+    std::cout << "avg mass (all blobs): " << sipl::average_mass(components)
+              << std::endl;
+
+    // Filter any blobs < REMOVE_BLOB_MASS_PERC% of the avg mass
+    double avg_mass = sipl::average_mass(components);
+    auto it = std::partition(
+        std::begin(components), std::end(components), [avg_mass](auto c) {
+            return c.mass >= REMOVE_BLOB_MASS_PERC * avg_mass;
+        });
+    std::vector<sipl::Component> large_blobs(std::begin(components), it);
+    std::vector<sipl::Component> small_blobs(it, std::end(components));
+
+    // Draw over small blobs and remove them from image
+    for (const auto& blob : small_blobs) {
+        for (const auto& i : blob.indices) {
+            slice_img(i[0], i[1]) = 0;
+        }
+    }
+    sipl::PgmIO::write(slice_img, "04_remove_small_blobs.pgm");
+
+    /*
+    // Do another dilate
+    slice_img = sipl::morphology::close(
+        slice_img,
+        sipl::morphology::kernels::rectangle(morph_ksize, morph_ksize));
+    sipl::PgmIO::write(slice_img, "05_morph_2.pgm");
+
+    // Get new connected components
+    components = sipl::connected_components(slice_img, sipl::Connectivity::N8);
+    */
+
+    // Recalculate avg_mass
+    auto total_mass = sipl::total_mass(large_blobs);
+    avg_mass = sipl::average_mass(large_blobs);
+    std::cout << "tot mass: " << total_mass << std::endl;
+    std::cout << "avg mass: " << avg_mass << std::endl;
+    std::cout << "div:      " << double(total_mass) / avg_mass << std::endl;
+
+    std::cout << "# of components (small blobs removed): " << large_blobs.size()
+              << std::endl;
+    for (size_t i = 0; i < large_blobs.size(); ++i) {
+        std::cout << i + 1 << "\tmass: " << large_blobs[i].mass
+                  << "\tcom: " << large_blobs[i].center_of_mass << std::endl;
+    }
+
+    // Get a new count
+    size_t car_count = large_blobs.size();
+    for (const auto& c : large_blobs) {
+        if (c.mass > SPLIT_BLOB_FACTOR * avg_mass) {
+            car_count++;
+        }
+    }
+    std::cout << "new car count: " << car_count << std::endl;
 }
 
 void parse_commandline(char** argv)
@@ -96,12 +168,13 @@ std::vector<std::string> generate_filenames(const std::string& format,
     return filenames;
 }
 
-std::vector<MatrixXb> read_video_dir(const std::vector<std::string>& filenames)
+std::vector<sipl::MatrixXb> read_video_dir(
+    const std::vector<std::string>& filenames)
 {
-    std::vector<MatrixXb> gray_pngs;
+    std::vector<sipl::MatrixXb> gray_pngs;
     gray_pngs.reserve(filenames.size());
     for (const auto& f : filenames) {
-        auto color = PngIO::read(f);
+        auto color = sipl::PngIO::read(f);
         gray_pngs.push_back(color_to_grayscale(color));
     }
 
@@ -110,9 +183,10 @@ std::vector<MatrixXb> read_video_dir(const std::vector<std::string>& filenames)
 
 // Implementation taken from:
 // https://www.cs.unm.edu/~angel/BOOK/INTERACTIVE_COMPUTER_GRAPHICS/FOURTH_EDITION/PROGRAMS/bresenham.c
-std::vector<Vector2i> bresenham(const Vector2i& p1, const Vector2i& p2)
+std::vector<sipl::Vector2i> bresenham(const sipl::Vector2i& p1,
+                                      const sipl::Vector2i& p2)
 {
-    std::vector<Vector2i> points;
+    std::vector<sipl::Vector2i> points;
     int32_t dx, dy, i, e;
     int32_t incx, incy, inc1, inc2;
     int32_t x, y;
