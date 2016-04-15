@@ -3,14 +3,14 @@
 #ifndef SIPL_IMPROC_FILTER_H
 #define SIPL_IMPROC_FILTER_H
 
-#include <algorithm>
-#include <limits>
-#include <deque>
 #include "Common.hpp"
-#include "matrix/Matrix"
-#include "matrix/Vector"
 #include "improc/Kernels.hpp"
 #include "io/BmpIO.hpp"
+#include "matrix/Matrix"
+#include "matrix/Vector"
+#include <algorithm>
+#include <deque>
+#include <limits>
 
 namespace sipl
 {
@@ -73,6 +73,14 @@ MatrixX<OutputType> correlate(const MatrixX<InputType>& img,
     }
 
     return corr;
+}
+
+template <typename Dtype>
+MatrixX<Dtype> median_filter(const MatrixX<Dtype>& img,
+                             int32_t height,
+                             int32_t width)
+{
+    return nonlinear_kth_filter(img, height, width, (height + width) / 2);
 }
 
 template <typename Dtype>
