@@ -152,6 +152,13 @@ public:
 
     int32_t size_in_bytes(void) const { return nbytes_; }
 
+    template <typename UnaryFunctor>
+    void transform(UnaryFunctor f)
+    {
+        std::transform(std::begin(data_), std::end(data_), std::begin(data_),
+                       f);
+    }
+
     // op-then-store operations
     // XXX revisit for better != 0 comparison
     template <typename T>
