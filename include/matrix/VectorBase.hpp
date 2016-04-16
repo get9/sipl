@@ -61,6 +61,8 @@ public:
     {
     }
 
+	~VectorBase() {}
+
     // Copy-assign
     VectorBase& operator=(const VectorBase& other)
     {

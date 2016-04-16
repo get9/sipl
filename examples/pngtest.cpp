@@ -41,10 +41,14 @@ int main(int argc, char** argv)
 
     // Read in PNG's, convert to grayscale
     auto filenames = generate_filenames(format, img_start, img_count);
+	std::cout << "reading images" << std::endl;
     auto grays = read_video_dir(filenames);
+	std::cout << "done reading images" << std::endl;
 
     // Compute average img
+	std::cout << "computing background image" << std::endl;
     auto avg = sipl::average(grays);
+	std::cout << "done computing background image" << std::endl;
 
     // Compute sagittal view
     auto points = bresenham({start_x, start_y}, {end_x, end_y});
@@ -63,6 +67,8 @@ int main(int argc, char** argv)
         }
     }
     sipl::PgmIO::write(slice_img, "01_sub_bg_thresh.pgm");
+	grays.reserve(0);
+	grays.shrink_to_fit();
 
     // Median blur
     auto median_ksize = int32_t(0.02 * points.size());

@@ -38,8 +38,10 @@ template <typename Dtype>
 MatrixXd average(const std::vector<MatrixX<Dtype>>& mats)
 {
     MatrixXd init(mats[0].dims, 0.0);
-    auto sum = std::accumulate(std::begin(mats), std::end(mats), init);
-    return sum / double(mats.size());
+	for (const auto& m : mats) {
+		init = init + m;
+	}
+    return init / double(mats.size());
 }
 
 template <typename Dtype>

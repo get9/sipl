@@ -22,11 +22,11 @@ struct DynamicArrayWrapper {
     DynamicArrayWrapper(const DynamicArrayWrapper& other)
         : data_(new Dtype[other.size_]), size_(other.size_)
     {
-        std::copy(std::begin(other), std::end(other), data_);
+		std::copy(std::begin(other), std::end(other), data_);
     }
 
     DynamicArrayWrapper(DynamicArrayWrapper&& other)
-        : data_(std::move(other.data_)), size_(other.size_)
+        : data_(other.data_), size_(other.size_)
     {
         other.data_ = nullptr;
         other.size_ = 0;
@@ -34,18 +34,22 @@ struct DynamicArrayWrapper {
 
     DynamicArrayWrapper& operator=(const DynamicArrayWrapper& other)
     {
-        if (data_ != nullptr) {
+		if (size_ == other.size()) {
+			std::copy(std::begin(other.data_), std::end(other.data_), data_);
+		}
+		else {
             delete[] data_;
-        }
-        data_ = new Dtype[other.size_];
-        size_ = other.size_;
-        std::copy(std::begin(other), std::end(other), data_);
+            data_ = new Dtype[other.size_];
+            size_ = other.size_;
+            std::copy(std::begin(other), std::end(other), data_);
+		}
+        
         return *this;
     }
 
     DynamicArrayWrapper& operator=(DynamicArrayWrapper&& other)
     {
-        data_ = std::move(other.data_);
+        data_ = other.data_;
         size_ = other.size_;
         other.data_ = nullptr;
         other.size_ = 0;

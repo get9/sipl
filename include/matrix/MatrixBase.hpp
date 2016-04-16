@@ -79,6 +79,8 @@ public:
         return *this;
     }
 
+	~MatrixBase() {}
+
     // Iterator & element access
     Dtype* begin() { return std::begin(data_); }
     const Dtype* begin() const { return std::begin(data_); }
