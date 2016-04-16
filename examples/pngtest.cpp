@@ -33,22 +33,26 @@ constexpr uint8_t THRESH_VAL = uint8_t(0.0875 * 255);
 constexpr double MORPH_KERNEL_SIZE_PERC = 0.03;
 constexpr double REMOVE_BLOB_MASS_PERC = 0.2;
 constexpr double SPLIT_BLOB_FACTOR = 1.5;
-constexpr double BLOB_MERGE_FACTOR = 0.02;
 
 int main(int argc, char** argv)
 {
+    if (argc < 8) {
+        std::cerr << "Usage:" << std::endl;
+        std::cerr << "    " << argv[0]
+                  << " LOI_x0 LOI_y0 LOI_x1 LOI_y1 image_name_template "
+                     "start_number total_image_number"
+                  << std::endl;
+        std::exit(1);
+    }
+
     parse_commandline(argv);
 
     // Read in PNG's, convert to grayscale
     auto filenames = generate_filenames(format, img_start, img_count);
-	std::cout << "reading images" << std::endl;
     auto grays = read_video_dir(filenames);
-	std::cout << "done reading images" << std::endl;
 
-    // Compute average img
-	std::cout << "computing background image" << std::endl;
-    auto avg = sipl::average(grays);
-	std::cout << "done computing background image" << std::endl;
+    // Compute background img
+    auto bg = sipl::average(grays);
 
     // Compute sagittal view
     auto points = bresenham({start_x, start_y}, {end_x, end_y});
@@ -57,7 +61,7 @@ int main(int argc, char** argv)
 
         // Subtract background
         auto diff =
-            sipl::math::abs(grays[i] - avg).clip(0, 255).as_type<uint8_t>();
+            sipl::math::abs(grays[i] - bg).clip(0, 255).as_type<uint8_t>();
 
         // Threshold away low 10%
         auto thresh_img = sipl::threshold_binary(diff, THRESH_VAL);
@@ -67,21 +71,19 @@ int main(int argc, char** argv)
         }
     }
     sipl::PgmIO::write(slice_img, "01_sub_bg_thresh.pgm");
-	grays.reserve(0);
-	grays.shrink_to_fit();
+    grays.reserve(0);
+    grays.shrink_to_fit();
 
     // Median blur
     auto median_ksize = int32_t(0.02 * points.size());
     if (median_ksize % 2 == 0) {
         median_ksize += 1;
     }
-    std::cout << "median filter size: " << median_ksize << std::endl;
     slice_img = sipl::median_filter(slice_img, median_ksize, median_ksize);
     sipl::PgmIO::write(slice_img, "02_med_filter.pgm");
 
     // Dilate by square
     auto morph_ksize = int32_t(MORPH_KERNEL_SIZE_PERC * points.size());
-    std::cout << "morphology kernel size: " << morph_ksize << std::endl;
     slice_img = sipl::morphology::dilate(
         slice_img,
         sipl::morphology::kernels::rectangle(morph_ksize, morph_ksize));
@@ -90,9 +92,6 @@ int main(int argc, char** argv)
     // Find connected components
     auto components =
         sipl::connected_components(slice_img, sipl::Connectivity::N8);
-    std::cout << "# raw components: " << components.size() << std::endl;
-    std::cout << "avg mass (all blobs): " << sipl::average_mass(components)
-              << std::endl;
 
     // Filter any blobs < REMOVE_BLOB_MASS_PERC% of the avg mass
     double avg_mass = sipl::average_mass(components);
@@ -111,26 +110,8 @@ int main(int argc, char** argv)
     }
     sipl::PgmIO::write(slice_img, "04_remove_small_blobs.pgm");
 
-    /*
-    // Do another dilate
-    slice_img = sipl::morphology::close(
-        slice_img,
-        sipl::morphology::kernels::rectangle(morph_ksize, morph_ksize));
-    sipl::PgmIO::write(slice_img, "05_morph_2.pgm");
-
-    // Get new connected components
-    components = sipl::connected_components(slice_img, sipl::Connectivity::N8);
-    */
-
     // Recalculate avg_mass
-    auto total_mass = sipl::total_mass(large_blobs);
     avg_mass = sipl::average_mass(large_blobs);
-    std::cout << "tot mass: " << total_mass << std::endl;
-    std::cout << "avg mass: " << avg_mass << std::endl;
-    std::cout << "div:      " << double(total_mass) / avg_mass << std::endl;
-
-    std::cout << "# of components (small blobs removed): " << large_blobs.size()
-              << std::endl;
     for (size_t i = 0; i < large_blobs.size(); ++i) {
         std::cout << i + 1 << "\tmass: " << large_blobs[i].mass
                   << "\tcom: " << large_blobs[i].center_of_mass << std::endl;
@@ -143,7 +124,15 @@ int main(int argc, char** argv)
             car_count++;
         }
     }
-    std::cout << "new car count: " << car_count << std::endl;
+
+    // Report
+    std::cout << "car count: " << car_count << std::endl;
+    std::cout << "Crossings:" << std::endl;
+    for (const auto& c : large_blobs) {
+        int32_t cross_count = (c.mass > SPLIT_BLOB_FACTOR * avg_mass ? 2 : 1);
+        std::cout << cross_count << " cross at time "
+                  << int32_t(std::round(c.center_of_mass[0] / 2)) << std::endl;
+    }
 }
 
 void parse_commandline(char** argv)
