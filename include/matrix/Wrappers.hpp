@@ -49,6 +49,7 @@ struct DynamicArrayWrapper {
 
     DynamicArrayWrapper& operator=(DynamicArrayWrapper&& other)
     {
+		delete[] data_;
         data_ = other.data_;
         size_ = other.size_;
         other.data_ = nullptr;
