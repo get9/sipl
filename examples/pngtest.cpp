@@ -70,7 +70,6 @@ int main(int argc, char** argv)
             slice_img(2 * i + 1, p) = thresh_img(points[p][1], points[p][0]);
         }
     }
-    sipl::PgmIO::write(slice_img, "01_sub_bg_thresh.pgm");
     grays.reserve(0);
     grays.shrink_to_fit();
 
@@ -80,14 +79,12 @@ int main(int argc, char** argv)
         median_ksize += 1;
     }
     slice_img = sipl::median_filter(slice_img, median_ksize, median_ksize);
-    sipl::PgmIO::write(slice_img, "02_med_filter.pgm");
 
     // Dilate by square
     auto morph_ksize = int32_t(MORPH_KERNEL_SIZE_PERC * points.size());
     slice_img = sipl::morphology::dilate(
         slice_img,
         sipl::morphology::kernels::rectangle(morph_ksize, morph_ksize));
-    sipl::PgmIO::write(slice_img, "03_morph.pgm");
 
     // Find connected components
     auto components =
@@ -108,7 +105,6 @@ int main(int argc, char** argv)
             slice_img(i[0], i[1]) = 0;
         }
     }
-    sipl::PgmIO::write(slice_img, "04_remove_small_blobs.pgm");
 
     // Recalculate avg_mass
     avg_mass = sipl::average_mass(large_blobs);
