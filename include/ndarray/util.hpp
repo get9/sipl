@@ -3,6 +3,8 @@
 #ifndef SIPL_NDARRAY_UTIL_H
 #define SIPL_NDARRAY_UTIL_H
 
+#include <tuple>
+
 namespace sipl
 {
 
