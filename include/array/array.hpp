@@ -1,11 +1,11 @@
 #pragma once
 
-#ifndef SIPL_NDARRAY_NDARRAY_H
-#define SIPL_NDARRAY_NDARRAY_H
+#ifndef SIPL_ARRAY_ARRAY_H
+#define SIPL_ARRAY_ARRAY_H
 
 #include <memory>
 #include <vector>
-#include "ndarray/util.hpp"
+#include "array/util.hpp"
 
 namespace sipl
 {
@@ -22,7 +22,6 @@ public:
         , buffer_(new Dtype[size_], std::default_delete<Dtype[]>())
         , shape_()
     {
-        std::forward_as_tuple(shape...)
     }
 
     size_t size() const { return size_; };
@@ -32,22 +31,6 @@ private:
     std::shared_ptr<Dtype> buffer_;
     std::vector<size_t> shape_;
 };
-
-template <typename Dtype, size_t... Shape>
-class static_array
-{
-public:
-    static_array()
-        : size_(util::multiply<Shape...>())
-        , buffer_(new Dtype[size_], std::default_delete<Dtype[]>())
-    {
-    }
-
-private:
-    size_t size_;
-    std::shared_ptr<Dtype> buffer_;
-    std::array<size_t, sizeof...(Shape)> shape_;
-}
 }
 
 #endif
